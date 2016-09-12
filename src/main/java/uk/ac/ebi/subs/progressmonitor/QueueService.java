@@ -27,7 +27,7 @@ public class QueueService {
     }
 
     @RabbitListener(queues = Channels.SUBMISSION_PROCESSED)
-    public void checkFroProcessedSubmissions(Submission queueSubmission) {
+    public void checkForProcessedSubmissions(Submission queueSubmission) {
         Submission mongoSubmission = submissionService.fetchSubmission(queueSubmission.getId());
 
         if(checkForUpdates(queueSubmission, mongoSubmission)) {
