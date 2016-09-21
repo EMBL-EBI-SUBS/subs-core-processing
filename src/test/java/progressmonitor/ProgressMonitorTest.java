@@ -1,14 +1,12 @@
 package progressmonitor;
 
-import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import uk.ac.ebi.subs.data.submittable.Submission;
@@ -27,15 +25,12 @@ public class ProgressMonitorTest {
     @Autowired
     SubmissionService submissionService;
 
-    private static MongoClient client;
+    @Autowired
+    MongoTemplate mongoTemplate;
 
     @Before //This runs before each test
     public void setUp() {
-        client = new MongoClient();
-        MongoDatabase db = client.getDatabase("test");
-        MongoCollection collection = db.getCollection("submission");
-        collection.drop();
-
+        mongoTemplate.getCollection("submission").drop();
         submissionService.storeSubmission(Helpers.generateTestSubmission());
     }
 
