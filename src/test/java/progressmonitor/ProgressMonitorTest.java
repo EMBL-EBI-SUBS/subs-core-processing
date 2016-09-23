@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -42,7 +43,7 @@ public class ProgressMonitorTest {
     @Test
     public void getSubmissionById() {
         try {
-            Submission sub1 = submissionService.fetchSubmissions().get(0);
+            Submission sub1 = submissionService.fetchSubmissions(new PageRequest(0,100)).getContent().get(0);
 
             Submission sub2 = submissionService.fetchSubmission(sub1.getId());
 
@@ -57,8 +58,8 @@ public class ProgressMonitorTest {
     @Test
     public void getSubmissionByDomainName() {
         try {
-            Submission sub1 = submissionService.fetchSubmissions().get(0);
-            List<Submission> submissionList = submissionService.fetchSubmissionsByDomainName("subs-test");
+            Submission sub1 = submissionService.fetchSubmissions(new PageRequest(0,100)).getContent().get(0);
+            List<Submission> submissionList = submissionService.fetchSubmissionsByDomainName(new PageRequest(0,100),"subs-test").getContent();
 
             Assert.assertTrue(submissionList.contains(sub1));
 
