@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import uk.ac.ebi.subs.data.submittable.*;
-import uk.ac.ebi.subs.messaging.Channels;
+import uk.ac.ebi.subs.messaging.Queues;
+import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.repository.SubmissionService;
 
 import java.util.ArrayList;
@@ -31,9 +32,10 @@ public class QueueService {
         this.submissionService = submissionService;
     }
 
-    @RabbitListener(queues = Channels.SUBMISSION_PROCESSED)
+    @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
     public void checkForProcessedSubmissions(Submission queueSubmission) {
-        logger.info("received submission {}",queueSubmission.getId());
+//TODO        logger.info("received submission {}",queueSubmission.getId());
+        logger.info("received submission {} {}",queueSubmission.getId(),queueSubmission.getLastHandler());
 
         Submission mongoSubmission = submissionService.fetchSubmission(queueSubmission.getId());
 
