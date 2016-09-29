@@ -34,8 +34,7 @@ public class QueueService {
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
     public void checkForProcessedSubmissions(Submission queueSubmission) {
-//TODO        logger.info("received submission {}",queueSubmission.getId());
-        logger.info("received submission {} {}",queueSubmission.getId(),queueSubmission.getLastHandler());
+        logger.info("received submission {}",queueSubmission.getId());
 
         Submission mongoSubmission = submissionService.fetchSubmission(queueSubmission.getId());
 
