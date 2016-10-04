@@ -7,9 +7,10 @@ import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import uk.ac.ebi.subs.data.Submission;
+import uk.ac.ebi.subs.data.SubmissionEnvelope;
 import uk.ac.ebi.subs.data.submittable.*;
 import uk.ac.ebi.subs.messaging.Queues;
-import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.repository.SubmissionService;
 
 import java.util.ArrayList;
@@ -33,7 +34,9 @@ public class QueueService {
     }
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
-    public void checkForProcessedSubmissions(Submission queueSubmission) {
+    public void checkForProcessedSubmissions(SubmissionEnvelope submissionEnvelope) {
+        Submission queueSubmission = submissionEnvelope.getSubmission();
+
         logger.info("received submission {}",queueSubmission.getId());
 
         Submission mongoSubmission = submissionService.fetchSubmission(queueSubmission.getId());
