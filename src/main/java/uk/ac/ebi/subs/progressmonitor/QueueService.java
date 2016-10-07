@@ -37,8 +37,9 @@ public class QueueService {
     public void checkForProcessedSubmissions(SubmissionEnvelope submissionEnvelope) {
         Submission queueSubmission = submissionEnvelope.getSubmission();
 
-        logger.info("received submission {}",queueSubmission.getId());
-
+        logger.info("received submission {}, most recent handler was ",
+                queueSubmission.getId(),
+                submissionEnvelope.mostRecentHandler());
         Submission mongoSubmission = submissionService.fetchSubmission(queueSubmission.getId());
 
         if(checkForUpdates(queueSubmission, mongoSubmission)) {
