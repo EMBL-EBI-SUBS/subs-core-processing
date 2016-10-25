@@ -11,26 +11,23 @@ import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.SubmissionEnvelope;
 import uk.ac.ebi.subs.data.submittable.*;
 import uk.ac.ebi.subs.messaging.Queues;
-import uk.ac.ebi.subs.repository.SubmissionService;
+import uk.ac.ebi.subs.repository.SubmissionRepository;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class QueueService {
-
-
     private static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
-    private RabbitMessagingTemplate rabbitMessagingTemplate;
-    private SubmissionService submissionService;
+    @Autowired
+    SubmissionRepository submissionRepository;
 
-    private List<Submission> submissions;
+    private RabbitMessagingTemplate rabbitMessagingTemplate;
 
     @Autowired
-    public QueueService(RabbitMessagingTemplate rabbitMessagingTemplate, SubmissionService submissionService) {
+    public QueueService(RabbitMessagingTemplate rabbitMessagingTemplate) {
         this.rabbitMessagingTemplate = rabbitMessagingTemplate;
-        this.submissionService = submissionService;
     }
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
@@ -40,11 +37,12 @@ public class QueueService {
         logger.info("received submission {}, most recent handler was {}",
                 queueSubmission.getId(),
                 submissionEnvelope.mostRecentHandler());
-        Submission mongoSubmission = submissionService.fetchSubmission(queueSubmission.getId());
+        Submission mongoSubmission = submissionRepository.findOne(queueSubmission.getId());
 
         if(checkForUpdates(queueSubmission, mongoSubmission)) {
             //FIXME - Is this store/save doing an upsert? Check and fix if required.
-            submissionService.storeSubmission(mongoSubmission);
+            submissionRepository.save(mongoSubmission);
+
             logger.info("updated submission {}",queueSubmission.getId());
         }
         else {
