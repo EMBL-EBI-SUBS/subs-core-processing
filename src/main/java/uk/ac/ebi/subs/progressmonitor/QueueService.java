@@ -11,6 +11,7 @@ import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.SubmissionEnvelope;
 import uk.ac.ebi.subs.data.submittable.*;
 import uk.ac.ebi.subs.messaging.Queues;
+import uk.ac.ebi.subs.processing.AgentResults;
 import uk.ac.ebi.subs.repository.SubmissionService;
 
 import java.util.ArrayList;
@@ -33,8 +34,20 @@ public class QueueService {
         this.submissionService = submissionService;
     }
 
+    @RabbitListener(queues = Queues.SUBMISSION_SUPPORTING_INFO_PROVIDED)
+    public void handleSupportingInfo(SubmissionEnvelope submissionEnvelope){
+        //TODO add a way to store supporting info
+        //TODO store supporting info,
+        //TODO send submission to the dispatcher
+    }
+
+
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
-    public void checkForProcessedSubmissions(SubmissionEnvelope submissionEnvelope) {
+    public void checkForProcessedSubmissions(AgentResults agentResults) {
+        //TODO reconstruct submission+envelope from repo
+        //TODO update repo with certs
+        //TODO send assembled submission+envelope to dispatcher
+
         Submission queueSubmission = submissionEnvelope.getSubmission();
 
         logger.info("received submission {}, most recent handler was {}",
