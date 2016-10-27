@@ -12,26 +12,34 @@ import uk.ac.ebi.subs.data.SubmissionEnvelope;
 import uk.ac.ebi.subs.data.submittable.*;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.processing.AgentResults;
-import uk.ac.ebi.subs.repository.SubmissionService;
+import uk.ac.ebi.subs.repository.SubmissionRepository;
+import uk.ac.ebi.subs.repository.submittable.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class QueueService {
-
-
     private static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
-    private RabbitMessagingTemplate rabbitMessagingTemplate;
-    private SubmissionService submissionService;
+    @Autowired SubmissionRepository submissionRepository;
+    @Autowired AnalysisRepository analysisRepository;
+    @Autowired AssayRepository assayRepository;
+    @Autowired AssayDataRepository assayDataRepository;
+    @Autowired EgaDacRepository egaDacRepository;
+    @Autowired EgaDacPolicyRepository egaDacPolicyRepository;
+    @Autowired EgaDatasetRepository egaDatasetRepository;
+    @Autowired ProjectRepository projectRepository;
+    @Autowired ProtocolRepository protocolRepository;
+    @Autowired SampleRepository sampleRepository;
+    @Autowired SampleGroupRepository sampleGroupRepository;
+    @Autowired StudyRepository studyRepository;
 
-    private List<Submission> submissions;
+    private RabbitMessagingTemplate rabbitMessagingTemplate;
 
     @Autowired
-    public QueueService(RabbitMessagingTemplate rabbitMessagingTemplate, SubmissionService submissionService) {
+    public QueueService(RabbitMessagingTemplate rabbitMessagingTemplate) {
         this.rabbitMessagingTemplate = rabbitMessagingTemplate;
-        this.submissionService = submissionService;
     }
 
     @RabbitListener(queues = Queues.SUBMISSION_SUPPORTING_INFO_PROVIDED)
@@ -53,11 +61,12 @@ public class QueueService {
         logger.info("received submission {}, most recent handler was {}",
                 queueSubmission.getId(),
                 submissionEnvelope.mostRecentHandler());
-        Submission mongoSubmission = submissionService.fetchSubmission(queueSubmission.getId());
+        Submission mongoSubmission = submissionRepository.findOne(queueSubmission.getId());
 
         if(checkForUpdates(queueSubmission, mongoSubmission)) {
             //FIXME - Is this store/save doing an upsert? Check and fix if required.
-            submissionService.storeSubmission(mongoSubmission);
+            saveSubmissionContents(mongoSubmission);
+
             logger.info("updated submission {}",queueSubmission.getId());
         }
         else {
@@ -123,5 +132,43 @@ public class QueueService {
         }
 
         return updates;
+    }
+
+    private void saveSubmissionContents(Submission submission) {
+        analysisRepository.save(submission.getAnalyses());
+        logger.debug("saved analyses {}");
+
+        assayRepository.save(submission.getAssays());
+        logger.debug("saved assays {}");
+
+        assayDataRepository.save(submission.getAssayData());
+        logger.debug("saved assayData {}");
+
+        egaDacRepository.save(submission.getEgaDacs());
+        logger.debug("saved egaDacs {}");
+
+        egaDacPolicyRepository.save(submission.getEgaDacPolicies());
+        logger.debug("saved egaDacPolicies {}");
+
+        egaDatasetRepository.save(submission.getEgaDatasets());
+        logger.debug("saved egaDatasets {}");
+
+        projectRepository.save(submission.getProjects());
+        logger.debug("saved projects {}");
+
+        protocolRepository.save(submission.getProtocols());
+        logger.debug("saved protocols {}");
+
+        sampleRepository.save(submission.getSamples());
+        logger.debug("saved samples {}");
+
+        sampleGroupRepository.save(submission.getSampleGroups());
+        logger.debug("saved sampleGroups {}");
+
+        studyRepository.save(submission.getStudies());
+        logger.debug("saved studies {}");
+
+        submissionRepository.save(submission);
+        logger.info("saved submission {}", submission.getId());
     }
 }

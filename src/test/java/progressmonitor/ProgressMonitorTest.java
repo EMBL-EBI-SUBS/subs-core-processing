@@ -12,19 +12,17 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
-import uk.ac.ebi.subs.repository.SubmissionService;
-import uk.ac.ebi.subs.repository.SubmissionServiceImpl;
 import util.Helpers;
 
 import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @EnableMongoRepositories(basePackageClasses = SubmissionRepository.class)
-@SpringBootTest(classes = {ProgressMonitorTestConfiguration.class, SubmissionServiceImpl.class})
+@SpringBootTest(classes = ProgressMonitorTestConfiguration.class)
 public class ProgressMonitorTest {
 
     @Autowired
-    SubmissionService submissionService;
+    SubmissionRepository submissionRepository;
 
     @Autowired
     MongoTemplate mongoTemplate;
@@ -32,20 +30,20 @@ public class ProgressMonitorTest {
     @Before //This runs before each test
     public void setUp() {
         mongoTemplate.getCollection("submission").drop();
-        submissionService.storeSubmission(Helpers.generateTestSubmission());
+        submissionRepository.save(Helpers.generateTestSubmission());
     }
 
     @Test
     public void testSaveSubmission() {
-        submissionService.storeSubmission(Helpers.generateTestSubmission());
+        submissionRepository.save(Helpers.generateTestSubmission());
     }
 
     @Test
     public void getSubmissionById() {
         try {
-            Submission sub1 = submissionService.fetchSubmissions(new PageRequest(0,100)).getContent().get(0);
+            Submission sub1 = submissionRepository.findAll(new PageRequest(0,100)).getContent().get(0);
 
-            Submission sub2 = submissionService.fetchSubmission(sub1.getId());
+            Submission sub2 = submissionRepository.findOne(sub1.getId());
 
             Assert.assertEquals(sub1, sub2);
 
@@ -58,8 +56,8 @@ public class ProgressMonitorTest {
     @Test
     public void getSubmissionByDomainName() {
         try {
-            Submission sub1 = submissionService.fetchSubmissions(new PageRequest(0,100)).getContent().get(0);
-            List<Submission> submissionList = submissionService.fetchSubmissionsByDomainName(new PageRequest(0,100),"subs-test").getContent();
+            Submission sub1 = submissionRepository.findAll(new PageRequest(0,100)).getContent().get(0);
+            List<Submission> submissionList = submissionRepository.findByDomainName("subs-test", new PageRequest(0,100)).getContent();
 
             Assert.assertTrue(submissionList.contains(sub1));
 
