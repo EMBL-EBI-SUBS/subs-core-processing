@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.data.Submission;
+import uk.ac.ebi.subs.data.submittable.Sample;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
@@ -14,10 +15,14 @@ import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.AgentResults;
 import uk.ac.ebi.subs.processing.Certificate;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
+import uk.ac.ebi.subs.repository.processing.SupportingSample;
+import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
 import uk.ac.ebi.subs.repository.submittable.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class QueueService {
@@ -36,6 +41,8 @@ public class QueueService {
     @Autowired SampleGroupRepository sampleGroupRepository;
     @Autowired StudyRepository studyRepository;
 
+    @Autowired SupportingSampleRepository supportingSampleRepository;
+
     private RabbitMessagingTemplate rabbitMessagingTemplate;
 
     @Autowired
@@ -45,17 +52,29 @@ public class QueueService {
 
     @RabbitListener(queues = Queues.SUBMISSION_SUPPORTING_INFO_PROVIDED)
     public void handleSupportingInfo(SubmissionEnvelope submissionEnvelope){
-        //TODO add a way to store supporting info
-        //TODO store supporting info,
-        //TODO send submission to the dispatcher
+
+        final String submissionId = submissionEnvelope.getSubmission().getId();
+
+        //store supporting info,
+
+
+        List<SupportingSample> supportingSamples = submissionEnvelope.getSupportingSamples().stream()
+                .map(s -> new SupportingSample(submissionId, s))
+                .collect(Collectors.toList());
+
+        supportingSampleRepository.save(supportingSamples);
+
+        //send submission to the dispatcher
+
+        sendSubmissionUpdated(submissionId);
     }
 
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
     public void checkForProcessedSubmissions(AgentResults agentResults) {
         //TODO reconstruct submission+envelope from repo
-        //TODO update repo with certs - done
-        //TODO send assembled submission+envelope to dispatcher - done for now
+
+
         logger.info("received agent results for submission {} with {} certificates ",
                 agentResults.getSubmissionUuid(),agentResults.getCertificates().size());
 
@@ -64,6 +83,7 @@ public class QueueService {
 
         Submission submission = submissionRepository.findOne(agentResults.getSubmissionUuid());
 
+        //update repo based on certs
         submission.allSubmissionItemsStream().forEach(s -> {
                 if (!certByUuid.containsKey(s.getId())) return;
 
@@ -77,7 +97,29 @@ public class QueueService {
 
         saveSubmissionContents(submission);
 
+        sendSubmissionUpdated(agentResults.getSubmissionUuid());
+    }
+
+    /**
+     * Submission or it's supporting information has been updated
+     *
+     * Recreate the submission envelope from storage and send it as a message
+     *
+     * @param submissionId
+     */
+    private void sendSubmissionUpdated(String submissionId) {
+        Submission submission = submissionRepository.findOne(submissionId);
+
+        List<Sample> supportingSamples = supportingSampleRepository
+                .findBySubmissionId(submissionId)
+                .stream()
+                .map(ss -> ss.getSample())
+                .collect(Collectors.toList());
+
+
         SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(submission);
+        submissionEnvelope.setSupportingSamples(supportingSamples);
+
 
         rabbitMessagingTemplate.convertAndSend(
                 Exchanges.SUBMISSIONS,
@@ -87,7 +129,6 @@ public class QueueService {
 
         logger.info("submission {} updated",
                 submission.getId());
-
     }
 
 
