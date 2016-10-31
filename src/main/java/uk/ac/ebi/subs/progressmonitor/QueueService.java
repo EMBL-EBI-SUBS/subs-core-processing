@@ -55,12 +55,18 @@ public class QueueService {
 
         final String submissionId = submissionEnvelope.getSubmission().getId();
 
-        //store supporting info,
 
 
         List<SupportingSample> supportingSamples = submissionEnvelope.getSupportingSamples().stream()
                 .map(s -> new SupportingSample(submissionId, s))
                 .collect(Collectors.toList());
+
+        //store supporting info,
+        logger.info(
+                "storing supporting sample info for submission {}, {} samples",
+                submissionEnvelope.getSubmission().getId(),
+                supportingSamples.size()
+        );
 
         supportingSampleRepository.save(supportingSamples);
 
@@ -72,7 +78,6 @@ public class QueueService {
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
     public void checkForProcessedSubmissions(AgentResults agentResults) {
-        //TODO reconstruct submission+envelope from repo
 
 
         logger.info("received agent results for submission {} with {} certificates ",
@@ -127,8 +132,7 @@ public class QueueService {
                 submissionEnvelope
         );
 
-        logger.info("submission {} updated",
-                submission.getId());
+        logger.info("submission {} update message sent", submissionId);
     }
 
 
