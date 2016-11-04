@@ -50,6 +50,19 @@ public class QueueService {
         this.rabbitMessagingTemplate = rabbitMessagingTemplate;
     }
 
+    @RabbitListener(queues = Queues.SUBMISSION_MONITOR_STATUS_UPDATE)
+    public void submissionStatusUpdated(Certificate certificate){
+        if (certificate.getUUID() == null) return;
+
+        Submission submission = submissionRepository.findOne(certificate.getUUID());
+
+        if (submission == null) return;
+
+        submission.setStatus(certificate.getProcessingStatus().name());
+
+        submissionRepository.save(submission);
+    }
+
     @RabbitListener(queues = Queues.SUBMISSION_SUPPORTING_INFO_PROVIDED)
     public void handleSupportingInfo(SubmissionEnvelope submissionEnvelope){
 
