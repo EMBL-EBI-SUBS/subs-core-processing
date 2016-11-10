@@ -8,12 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.submittable.Sample;
+import uk.ac.ebi.subs.processing.ProcessingCertificate;
+import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
-import uk.ac.ebi.subs.processing.AgentResults;
-import uk.ac.ebi.subs.processing.Certificate;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
@@ -51,14 +51,14 @@ public class QueueService {
     }
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR_STATUS_UPDATE)
-    public void submissionStatusUpdated(Certificate certificate){
-        if (certificate.getUUID() == null) return;
+    public void submissionStatusUpdated(ProcessingCertificate processingCertificate){
+        if (processingCertificate.getSubmittableId() == null) return;
 
-        Submission submission = submissionRepository.findOne(certificate.getUUID());
+        Submission submission = submissionRepository.findOne(processingCertificate.getSubmittableId());
 
         if (submission == null) return;
 
-        submission.setStatus(certificate.getProcessingStatus().name());
+        submission.setStatus(processingCertificate.getProcessingStatus().name());
 
         submissionRepository.save(submission);
     }
@@ -90,32 +90,32 @@ public class QueueService {
 
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
-    public void checkForProcessedSubmissions(AgentResults agentResults) {
+    public void checkForProcessedSubmissions(ProcessingCertificateEnvelope processingCertificateEnvelope) {
 
 
         logger.info("received agent results for submission {} with {} certificates ",
-                agentResults.getSubmissionUuid(),agentResults.getCertificates().size());
+                processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getProcessingCertificates().size());
 
-        Map<String,Certificate> certByUuid = new HashMap<>();
-        agentResults.getCertificates().forEach(c -> certByUuid.put(c.getUUID(),c));
+        Map<String,ProcessingCertificate> certByUuid = new HashMap<>();
+        processingCertificateEnvelope.getProcessingCertificates().forEach(c -> certByUuid.put(c.getSubmittableId(),c));
 
-        Submission submission = submissionRepository.findOne(agentResults.getSubmissionUuid());
+        Submission submission = submissionRepository.findOne(processingCertificateEnvelope.getSubmissionId());
 
         //update repo based on certs
         submission.allSubmissionItemsStream().forEach(s -> {
                 if (!certByUuid.containsKey(s.getId())) return;
 
-                Certificate c = certByUuid.get(s.getId());
+                ProcessingCertificate c = certByUuid.get(s.getId());
                 s.setAccession(c.getAccession());
                 s.setStatus(c.getProcessingStatus().toString());
 
-                logger.debug("Certificate {} applied to {}",c,s);
+                logger.debug("ProcessingCertificate {} applied to {}",c,s);
             }
         );
 
         saveSubmissionContents(submission);
 
-        sendSubmissionUpdated(agentResults.getSubmissionUuid());
+        sendSubmissionUpdated(processingCertificateEnvelope.getSubmissionId());
     }
 
     /**
