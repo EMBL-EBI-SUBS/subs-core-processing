@@ -7,6 +7,7 @@ dependencies {
     compile("org.springframework.boot:spring-boot-starter-amqp")
 
     compile project(':subs-data-model')
+    compile project(':subs-processing-model')
     compile project(':subs-messaging')
     compile project(':subs-repository')
 

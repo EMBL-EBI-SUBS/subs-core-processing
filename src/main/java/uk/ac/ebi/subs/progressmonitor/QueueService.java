@@ -6,15 +6,23 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import uk.ac.ebi.subs.data.Submission;
-import uk.ac.ebi.subs.data.SubmissionEnvelope;
-import uk.ac.ebi.subs.data.submittable.*;
+import uk.ac.ebi.subs.data.submittable.Sample;
+import uk.ac.ebi.subs.processing.ProcessingCertificate;
+import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
+import uk.ac.ebi.subs.processing.SubmissionEnvelope;
+import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
+import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
+import uk.ac.ebi.subs.repository.processing.SupportingSample;
+import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
+import uk.ac.ebi.subs.repository.submittable.*;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class QueueService {
@@ -23,6 +31,8 @@ public class QueueService {
     @Autowired
     SubmissionRepository submissionRepository;
 
+    @Autowired SupportingSampleRepository supportingSampleRepository;
+
     private RabbitMessagingTemplate rabbitMessagingTemplate;
 
     @Autowired
@@ -30,83 +40,102 @@ public class QueueService {
         this.rabbitMessagingTemplate = rabbitMessagingTemplate;
     }
 
-    @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
-    public void checkForProcessedSubmissions(SubmissionEnvelope submissionEnvelope) {
-        Submission queueSubmission = submissionEnvelope.getSubmission();
+    @RabbitListener(queues = Queues.SUBMISSION_MONITOR_STATUS_UPDATE)
+    public void submissionStatusUpdated(ProcessingCertificate processingCertificate){
+        if (processingCertificate.getSubmittableId() == null) return;
 
-        logger.info("received submission {}, most recent handler was {}",
-                queueSubmission.getId(),
-                submissionEnvelope.mostRecentHandler());
-        Submission mongoSubmission = submissionRepository.findOne(queueSubmission.getId());
+        Submission submission = submissionRepository.findOne(processingCertificate.getSubmittableId());
 
-        if(checkForUpdates(queueSubmission, mongoSubmission)) {
-            //FIXME - Is this store/save doing an upsert? Check and fix if required.
-            submissionRepository.save(mongoSubmission);
-            logger.info("updated submission {}",queueSubmission.getId());
-        }
-        else {
-            logger.info("no changes for submission {}",queueSubmission.getId());
-        }
+        if (submission == null) return;
+
+        submission.setStatus(processingCertificate.getProcessingStatus().name());
+
+        submissionRepository.save(submission);
     }
 
-    private boolean checkForUpdates(Submission queueSubmission, Submission mongoSubmission) {
-        boolean updates = false;
+    @RabbitListener(queues = Queues.SUBMISSION_SUPPORTING_INFO_PROVIDED)
+    public void handleSupportingInfo(SubmissionEnvelope submissionEnvelope){
 
-        List<Analysis> analyses = queueSubmission.getAnalyses();
-        if(!analyses.isEmpty() && !StringUtils.isEmpty(analyses.get(0).getAccession())) {
-            mongoSubmission.setAnalyses(analyses);
-            updates = true;
-        }
+        final String submissionId = submissionEnvelope.getSubmission().getId();
 
-        List<Assay> assays = queueSubmission.getAssays();
-        if(!assays.isEmpty() && !StringUtils.isEmpty(assays.get(0).getAccession())) {
-            mongoSubmission.setAssays(assays);
-            updates = true;
-        }
 
-        List<AssayData> assayData = new ArrayList<>();
-        if(!assayData.isEmpty() && !StringUtils.isEmpty(assayData.get(0).getAccession())) {
-            mongoSubmission.setAssayData(assayData);
-            updates = true;
-        }
 
-        List<EgaDac> egaDacs = new ArrayList<>();
-        if(!egaDacs.isEmpty() && !StringUtils.isEmpty(egaDacs.get(0).getAccession())) {
-            mongoSubmission.setEgaDacs(egaDacs);
-            updates = true;
-        }
+        List<SupportingSample> supportingSamples = submissionEnvelope.getSupportingSamples().stream()
+                .map(s -> new SupportingSample(submissionId, s))
+                .collect(Collectors.toList());
 
-        List<EgaDacPolicy> egaDacPolicies = new ArrayList<>();
-        if(!egaDacPolicies.isEmpty() && !StringUtils.isEmpty(egaDacPolicies.get(0).getAccession())) {
-            mongoSubmission.setEgaDacPolicies(egaDacPolicies);
-            updates = true;
-        }
+        //store supporting info,
+        logger.info(
+                "storing supporting sample info for submission {}, {} samples",
+                submissionEnvelope.getSubmission().getId(),
+                supportingSamples.size()
+        );
 
-        List<EgaDataset> egaDatasets = new ArrayList<>();
-        if(!egaDatasets.isEmpty() && !StringUtils.isEmpty(egaDatasets.get(0).getAccession())) {
-            mongoSubmission.setEgaDatasets(egaDatasets);
-            updates = true;
-        }
+        supportingSampleRepository.save(supportingSamples);
 
-        List<Project> projects = new ArrayList<>();
-        if(!projects.isEmpty() && !StringUtils.isEmpty(projects.get(0).getAccession())) {
-            mongoSubmission.setProjects(projects);
-            updates = true;
-        }
+        //send submission to the dispatcher
 
-        List<Sample> samples = queueSubmission.getSamples();
-        if(!samples.isEmpty() && !StringUtils.isEmpty(samples.get(0).getAccession())){
-            mongoSubmission.setSamples(samples);
-            updates = true;
-        }
+        sendSubmissionUpdated(submissionId);
+    }
 
-        List<Study> studies = new ArrayList<>();
-        if(!studies.isEmpty() && !StringUtils.isEmpty(studies.get(0).getAccession())){
-            mongoSubmission.setStudies(studies);
-            updates = true;
-        }
 
-        return updates;
+    @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
+    public void checkForProcessedSubmissions(ProcessingCertificateEnvelope processingCertificateEnvelope) {
+
+
+        logger.info("received agent results for submission {} with {} certificates ",
+                processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getProcessingCertificates().size());
+
+        Map<String,ProcessingCertificate> certByUuid = new HashMap<>();
+        processingCertificateEnvelope.getProcessingCertificates().forEach(c -> certByUuid.put(c.getSubmittableId(),c));
+
+        Submission submission = submissionRepository.findOne(processingCertificateEnvelope.getSubmissionId());
+
+        //update repo based on certs
+        submission.allSubmissionItemsStream().forEach(s -> {
+                if (!certByUuid.containsKey(s.getId())) return;
+
+                ProcessingCertificate c = certByUuid.get(s.getId());
+                s.setAccession(c.getAccession());
+                s.setStatus(c.getProcessingStatus().toString());
+
+                logger.debug("ProcessingCertificate {} applied to {}",c,s);
+            }
+        );
+
+        submissionRepository.save(submission);
+
+        sendSubmissionUpdated(processingCertificateEnvelope.getSubmissionId());
+    }
+
+    /**
+     * Submission or it's supporting information has been updated
+     *
+     * Recreate the submission envelope from storage and send it as a message
+     *
+     * @param submissionId
+     */
+    private void sendSubmissionUpdated(String submissionId) {
+        Submission submission = submissionRepository.findOne(submissionId);
+
+        List<Sample> supportingSamples = supportingSampleRepository
+                .findBySubmissionId(submissionId)
+                .stream()
+                .map(ss -> ss.getSample())
+                .collect(Collectors.toList());
+
+
+        SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(submission);
+        submissionEnvelope.setSupportingSamples(supportingSamples);
+
+
+        rabbitMessagingTemplate.convertAndSend(
+                Exchanges.SUBMISSIONS,
+                Topics.EVENT_SUBMISSION_UPDATED,
+                submissionEnvelope
+        );
+
+        logger.info("submission {} update message sent", submissionId);
     }
 
 }
