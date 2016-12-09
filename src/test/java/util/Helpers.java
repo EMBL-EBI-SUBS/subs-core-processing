@@ -1,6 +1,6 @@
 package util;
 
-import uk.ac.ebi.subs.data.FullSubmission;
+
 import uk.ac.ebi.subs.data.component.Domain;
 import uk.ac.ebi.subs.data.submittable.Sample;
 import uk.ac.ebi.subs.data.Submission;
@@ -28,8 +28,8 @@ public class Helpers {
         return samples;
     }
 
-    public static FullSubmission generateTestSubmission() {
-        FullSubmission sub = new FullSubmission();
+    public static Submission generateTestSubmission() {
+        Submission sub = new Submission();
         sub.setId(UUID.randomUUID().toString());
         Domain d = new Domain();
         d.setName("subs-test");
