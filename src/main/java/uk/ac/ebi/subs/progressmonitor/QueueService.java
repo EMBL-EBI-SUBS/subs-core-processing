@@ -6,6 +6,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.submittable.Sample;
 import uk.ac.ebi.subs.processing.ProcessingCertificate;
@@ -89,7 +90,9 @@ public class QueueService {
         Map<String,ProcessingCertificate> certByUuid = new HashMap<>();
         processingCertificateEnvelope.getProcessingCertificates().forEach(c -> certByUuid.put(c.getSubmittableId(),c));
 
-        Submission submission = submissionRepository.findOne(processingCertificateEnvelope.getSubmissionId());
+        Submission flatSubmission = submissionRepository.findOne(processingCertificateEnvelope.getSubmissionId());
+        FullSubmission submission = new FullSubmission();//TODO flesh this out
+
 
         //update repo based on certs
         submission.allSubmissionItemsStream().forEach(s -> {
@@ -125,7 +128,9 @@ public class QueueService {
                 .collect(Collectors.toList());
 
 
-        SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(submission);
+        //TODO this isn't wired up yet
+        FullSubmission fullSubmission = new FullSubmission();
+        SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(fullSubmission);
         submissionEnvelope.setSupportingSamples(supportingSamples);
 
 
