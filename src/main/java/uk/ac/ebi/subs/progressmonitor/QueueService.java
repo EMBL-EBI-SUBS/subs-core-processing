@@ -5,8 +5,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.repository.support.Repositories;
 import org.springframework.stereotype.Component;
 
+import org.springframework.web.context.WebApplicationContext;
+import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.submittable.Sample;
 import uk.ac.ebi.subs.processing.ProcessingCertificate;
@@ -15,6 +19,7 @@ import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
+import uk.ac.ebi.subs.repository.FullSubmissionService;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
@@ -30,9 +35,15 @@ public class QueueService {
     private static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
     @Autowired
+    WebApplicationContext applicationContext;
+
+    @Autowired
     SubmissionRepository submissionRepository;
 
     @Autowired SupportingSampleRepository supportingSampleRepository;
+
+    @Autowired
+    FullSubmissionService fullSubmissionService;
 
     private RabbitMessagingTemplate rabbitMessagingTemplate;
 
@@ -58,6 +69,8 @@ public class QueueService {
     public void handleSupportingInfo(SubmissionEnvelope submissionEnvelope){
 
         final String submissionId = submissionEnvelope.getSubmission().getId();
+
+
 
 
 
@@ -90,22 +103,24 @@ public class QueueService {
         Map<String,ProcessingCertificate> certByUuid = new HashMap<>();
         processingCertificateEnvelope.getProcessingCertificates().forEach(c -> certByUuid.put(c.getSubmittableId(),c));
 
-        Submission submission = submissionRepository.findOne(processingCertificateEnvelope.getSubmissionId());
 
+        Repositories repositories = new Repositories(applicationContext);
+
+        FullSubmission submission = fullSubmissionService.fetchOne(processingCertificateEnvelope.getSubmissionId());
 
         //update repo based on certs
-        submission.allSubmissionItemsStream().forEach(s -> {
-                if (!certByUuid.containsKey(s.getId())) return;
+        submission.allSubmissionItemsStream()
+                .filter(s -> certByUuid.containsKey(s.getId()))
+                .forEach(s -> {
+                    ProcessingCertificate c = certByUuid.get(s.getId());
+                    s.setAccession(c.getAccession());
+                    s.setStatus(c.getProcessingStatus().toString());
 
-                ProcessingCertificate c = certByUuid.get(s.getId());
-                s.setAccession(c.getAccession());
-                s.setStatus(c.getProcessingStatus().toString());
+                    ((MongoRepository)repositories.getRepositoryFor(s.getClass())).save(s);
 
-                logger.debug("ProcessingCertificate {} applied to {}",c,s);
+                    logger.debug("ProcessingCertificate {} applied to {}",c,s);
             }
         );
-
-        submissionRepository.save(submission);
 
         sendSubmissionUpdated(processingCertificateEnvelope.getSubmissionId());
     }
@@ -118,7 +133,7 @@ public class QueueService {
      * @param submissionId
      */
     private void sendSubmissionUpdated(String submissionId) {
-        Submission submission = submissionRepository.findOne(submissionId);
+        FullSubmission submission = fullSubmissionService.fetchOne(submissionId);
 
         List<Sample> supportingSamples = supportingSampleRepository
                 .findBySubmissionId(submissionId)
