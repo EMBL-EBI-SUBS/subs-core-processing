@@ -5,25 +5,23 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.repository.support.Repositories;
 import org.springframework.stereotype.Component;
-
-import org.springframework.web.context.WebApplicationContext;
 import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.submittable.Sample;
-import uk.ac.ebi.subs.processing.ProcessingCertificate;
-import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
-import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
+import uk.ac.ebi.subs.processing.ProcessingCertificate;
+import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
+import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.FullSubmissionService;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
-import uk.ac.ebi.subs.repository.submittable.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,12 +33,13 @@ public class QueueService {
     private static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
     @Autowired
-    WebApplicationContext applicationContext;
+    ApplicationContext applicationContext;
 
     @Autowired
     SubmissionRepository submissionRepository;
 
-    @Autowired SupportingSampleRepository supportingSampleRepository;
+    @Autowired
+    SupportingSampleRepository supportingSampleRepository;
 
     @Autowired
     FullSubmissionService fullSubmissionService;
@@ -53,7 +52,7 @@ public class QueueService {
     }
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR_STATUS_UPDATE)
-    public void submissionStatusUpdated(ProcessingCertificate processingCertificate){
+    public void submissionStatusUpdated(ProcessingCertificate processingCertificate) {
         if (processingCertificate.getSubmittableId() == null) return;
 
         Submission submission = submissionRepository.findOne(processingCertificate.getSubmittableId());
@@ -66,12 +65,9 @@ public class QueueService {
     }
 
     @RabbitListener(queues = Queues.SUBMISSION_SUPPORTING_INFO_PROVIDED)
-    public void handleSupportingInfo(SubmissionEnvelope submissionEnvelope){
+    public void handleSupportingInfo(SubmissionEnvelope submissionEnvelope) {
 
         final String submissionId = submissionEnvelope.getSubmission().getId();
-
-
-
 
 
         List<SupportingSample> supportingSamples = submissionEnvelope.getSupportingSamples().stream()
@@ -100,8 +96,8 @@ public class QueueService {
         logger.info("received agent results for submission {} with {} certificates ",
                 processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getProcessingCertificates().size());
 
-        Map<String,ProcessingCertificate> certByUuid = new HashMap<>();
-        processingCertificateEnvelope.getProcessingCertificates().forEach(c -> certByUuid.put(c.getSubmittableId(),c));
+        Map<String, ProcessingCertificate> certByUuid = new HashMap<>();
+        processingCertificateEnvelope.getProcessingCertificates().forEach(c -> certByUuid.put(c.getSubmittableId(), c));
 
 
         Repositories repositories = new Repositories(applicationContext);
@@ -112,22 +108,22 @@ public class QueueService {
         submission.allSubmissionItemsStream()
                 .filter(s -> certByUuid.containsKey(s.getId()))
                 .forEach(s -> {
-                    ProcessingCertificate c = certByUuid.get(s.getId());
-                    s.setAccession(c.getAccession());
-                    s.setStatus(c.getProcessingStatus().toString());
+                            ProcessingCertificate c = certByUuid.get(s.getId());
+                            s.setAccession(c.getAccession());
+                            s.setStatus(c.getProcessingStatus().toString());
 
-                    ((MongoRepository)repositories.getRepositoryFor(s.getClass())).save(s);
+                            ((MongoRepository) repositories.getRepositoryFor(s.getClass())).save(s);
 
-                    logger.debug("ProcessingCertificate {} applied to {}",c,s);
-            }
-        );
+                            logger.debug("ProcessingCertificate {} applied to {}", c, s);
+                        }
+                );
 
         sendSubmissionUpdated(processingCertificateEnvelope.getSubmissionId());
     }
 
     /**
      * Submission or it's supporting information has been updated
-     *
+     * <p>
      * Recreate the submission envelope from storage and send it as a message
      *
      * @param submissionId
