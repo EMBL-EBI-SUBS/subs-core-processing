@@ -30,12 +30,11 @@ public class Helpers {
     }
 
     public static Submission generateTestSubmission() {
-        FullSubmission sub = new FullSubmission();
+        Submission sub = new Submission();
         sub.setId(UUID.randomUUID().toString());
         Domain d = new Domain();
         d.setName("subs-test");
         sub.setDomain(d);
-        sub.setSamples(generateTestSamples());
         return sub;
     }
 }
