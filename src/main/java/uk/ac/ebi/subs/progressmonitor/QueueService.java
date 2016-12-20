@@ -5,13 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.repository.support.Repositories;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.data.Submission;
-import uk.ac.ebi.subs.data.submittable.Sample;
+import uk.ac.ebi.subs.data.submittable.*;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
@@ -22,18 +20,17 @@ import uk.ac.ebi.subs.repository.FullSubmissionService;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
+import uk.ac.ebi.subs.repository.submittable.*;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
 public class QueueService {
     private static final Logger logger = LoggerFactory.getLogger(QueueService.class);
-
-    @Autowired
-    ApplicationContext applicationContext;
 
     @Autowired
     SubmissionRepository submissionRepository;
@@ -43,6 +40,30 @@ public class QueueService {
 
     @Autowired
     FullSubmissionService fullSubmissionService;
+
+    @Autowired
+    AnalysisRepository analysisRepository;
+    @Autowired
+    AssayDataRepository assayDataRepository;
+    @Autowired
+    AssayRepository assayRepository;
+    @Autowired
+    EgaDacPolicyRepository egaDacPolicyRepository;
+    @Autowired
+    EgaDacRepository egaDacRepository;
+    @Autowired
+    EgaDatasetRepository egaDatasetRepository;
+    @Autowired
+    ProjectRepository projectRepository;
+    @Autowired
+    ProtocolRepository protocolRepository;
+    @Autowired
+    SampleGroupRepository sampleGroupRepository;
+    @Autowired
+    SampleRepository sampleRepository;
+    @Autowired
+    StudyRepository studyRepository;
+
 
     private RabbitMessagingTemplate rabbitMessagingTemplate;
 
@@ -89,34 +110,96 @@ public class QueueService {
     }
 
 
+    /**
+     * Consumes certificates from a map, using them to update the status of submittables.
+     *
+     * @param certByUuid
+     * @param submittables
+     * @param repository
+     */
+    private void updateStatusByCertificate(Map<String, ProcessingCertificate> certByUuid, List submittables, CrudRepository repository) {
+        ListIterator listIterator = submittables.listIterator();
+
+        while (listIterator.hasNext()) {
+            Submittable s = (Submittable) listIterator.next();
+
+            if (certByUuid.containsKey(s.getId())) {
+                ProcessingCertificate cert = certByUuid.remove(s.getId());
+                s.setStatus(cert.getProcessingStatus().name());
+            } else {
+                listIterator.remove(); //don't bother updating these
+            }
+        }
+        if (!submittables.isEmpty()) {
+            repository.save(submittables);
+        }
+    }
+
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
     public void checkForProcessedSubmissions(ProcessingCertificateEnvelope processingCertificateEnvelope) {
 
+        String submissionId = processingCertificateEnvelope.getSubmissionId();
+
 
         logger.info("received agent results for submission {} with {} certificates ",
-                processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getProcessingCertificates().size());
+                submissionId, processingCertificateEnvelope.getProcessingCertificates().size());
 
         Map<String, ProcessingCertificate> certByUuid = new HashMap<>();
         processingCertificateEnvelope.getProcessingCertificates().forEach(c -> certByUuid.put(c.getSubmittableId(), c));
 
 
-        Repositories repositories = new Repositories(applicationContext);
+        if (!certByUuid.isEmpty()){
+            List<Sample> samples = sampleRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,samples,sampleRepository);
+        }
+        if (!certByUuid.isEmpty()){
+            List<Study> studies= studyRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,studies,studyRepository);
+        }
+        if (!certByUuid.isEmpty()){
+            List<Assay> assays = assayRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,assays,assayRepository);
+        }
+        if (!certByUuid.isEmpty()){
+            List<AssayData> assayData = assayDataRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,assayData,assayDataRepository);
+        }
 
-        FullSubmission submission = fullSubmissionService.fetchOne(processingCertificateEnvelope.getSubmissionId());
+        if (!certByUuid.isEmpty()){
+            List<Analysis> analyses = analysisRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,analyses,analysisRepository);
+        }
+        if (!certByUuid.isEmpty()){
+            List<EgaDacPolicy> egaDacPolicies = egaDacPolicyRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,egaDacPolicies,egaDacPolicyRepository);
+        }
+        if (!certByUuid.isEmpty()){
+            List<EgaDac> egaDacs = egaDacRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,egaDacs,egaDacRepository);
+        }
+        if (!certByUuid.isEmpty()){
+            List<EgaDataset> egaDatasets = egaDatasetRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,egaDatasets,egaDatasetRepository);
+        }
+        if (!certByUuid.isEmpty()){
+            List<Project> projects = projectRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,projects,projectRepository);
+        }
+        if (!certByUuid.isEmpty()){
+            List<Protocol> protocols = protocolRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,protocols,protocolRepository);
+        }
+        if (!certByUuid.isEmpty()){
+            List<SampleGroup> sampleGroups = sampleGroupRepository.findBySubmissionId(submissionId);
+            updateStatusByCertificate(certByUuid,sampleGroups,sampleGroupRepository);
+        }
 
-        //update repo based on certs
-        submission.allSubmissionItemsStream()
-                .filter(s -> certByUuid.containsKey(s.getId()))
-                .forEach(s -> {
-                            ProcessingCertificate c = certByUuid.get(s.getId());
-                            s.setAccession(c.getAccession());
-                            s.setStatus(c.getProcessingStatus().toString());
 
-                            ((MongoRepository) repositories.getRepositoryFor(s.getClass())).save(s);
 
-                            logger.debug("ProcessingCertificate {} applied to {}", c, s);
-                        }
-                );
+        if (!certByUuid.isEmpty()){
+            logger.error("Certificates remain to be processed for submission {}, but we can't find the entries they refer to {}",submissionId,certByUuid.values());
+        }
+
 
         sendSubmissionUpdated(processingCertificateEnvelope.getSubmissionId());
     }
