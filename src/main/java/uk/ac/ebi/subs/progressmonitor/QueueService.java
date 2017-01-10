@@ -80,7 +80,7 @@ public class QueueService {
 
         if (submission == null) return;
 
-        submission.setStatus(processingCertificate.getProcessingStatus().name());
+        submission.setStatus(processingCertificate.getProcessingStatus().name()); //TODO rewrite this to use submission status
 
         submissionRepository.save(submission);
     }
