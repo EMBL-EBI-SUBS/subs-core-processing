@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.submittable.*;
@@ -22,10 +23,7 @@ import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
 import uk.ac.ebi.subs.repository.submittable.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -63,6 +61,8 @@ public class QueueService {
     SampleRepository sampleRepository;
     @Autowired
     StudyRepository studyRepository;
+
+    @Autowired SubmittablesBulkOperations submittablesBulkOperations;
 
 
     private RabbitMessagingTemplate rabbitMessagingTemplate;
@@ -110,99 +110,31 @@ public class QueueService {
     }
 
 
-    /**
-     * Consumes certificates from a map, using them to update the status of submittables.
-     *
-     * @param certByUuid
-     * @param submittables
-     * @param repository
-     */
-    private void updateStatusByCertificate(Map<String, ProcessingCertificate> certByUuid, List submittables, CrudRepository repository) {
-        ListIterator listIterator = submittables.listIterator();
 
-        while (listIterator.hasNext()) {
-            Submittable s = (Submittable) listIterator.next();
-
-            if (certByUuid.containsKey(s.getId())) {
-                ProcessingCertificate cert = certByUuid.remove(s.getId());
-                s.setStatus(cert.getProcessingStatus().name());
-                if (!s.isAccessioned() && cert.getAccession() != null){
-                    s.setAccession(cert.getAccession());
-                }
-            } else {
-                listIterator.remove(); //don't bother updating these
-            }
-        }
-        if (!submittables.isEmpty()) {
-            repository.save(submittables);
-        }
-    }
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
     public void checkForProcessedSubmissions(ProcessingCertificateEnvelope processingCertificateEnvelope) {
 
-        String submissionId = processingCertificateEnvelope.getSubmissionId();
-
-
         logger.info("received agent results for submission {} with {} certificates ",
-                submissionId, processingCertificateEnvelope.getProcessingCertificates().size());
+                processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getProcessingCertificates().size());
 
-        Map<String, ProcessingCertificate> certByUuid = new HashMap<>();
-        processingCertificateEnvelope.getProcessingCertificates().forEach(c -> certByUuid.put(c.getSubmittableId(), c));
+        List<Class> submittablesClasses = Arrays.asList(
+                Analysis.class,
+                Assay.class,
+                AssayData.class,
+                EgaDac.class,
+                EgaDacPolicy.class,
+                EgaDataset.class,
+                Project.class,
+                Protocol.class,
+                Sample.class,
+                SampleGroup.class,
+                Study.class
+        );
 
-
-        if (!certByUuid.isEmpty()){
-            List<Sample> samples = sampleRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,samples,sampleRepository);
+        for (Class submittableClass : submittablesClasses){
+            submittablesBulkOperations.applyProcessingCertificates(processingCertificateEnvelope, submittableClass);
         }
-        if (!certByUuid.isEmpty()){
-            List<Study> studies= studyRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,studies,studyRepository);
-        }
-        if (!certByUuid.isEmpty()){
-            List<Assay> assays = assayRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,assays,assayRepository);
-        }
-        if (!certByUuid.isEmpty()){
-            List<AssayData> assayData = assayDataRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,assayData,assayDataRepository);
-        }
-
-        if (!certByUuid.isEmpty()){
-            List<Analysis> analyses = analysisRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,analyses,analysisRepository);
-        }
-        if (!certByUuid.isEmpty()){
-            List<EgaDacPolicy> egaDacPolicies = egaDacPolicyRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,egaDacPolicies,egaDacPolicyRepository);
-        }
-        if (!certByUuid.isEmpty()){
-            List<EgaDac> egaDacs = egaDacRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,egaDacs,egaDacRepository);
-        }
-        if (!certByUuid.isEmpty()){
-            List<EgaDataset> egaDatasets = egaDatasetRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,egaDatasets,egaDatasetRepository);
-        }
-        if (!certByUuid.isEmpty()){
-            List<Project> projects = projectRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,projects,projectRepository);
-        }
-        if (!certByUuid.isEmpty()){
-            List<Protocol> protocols = protocolRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,protocols,protocolRepository);
-        }
-        if (!certByUuid.isEmpty()){
-            List<SampleGroup> sampleGroups = sampleGroupRepository.findBySubmissionId(submissionId);
-            updateStatusByCertificate(certByUuid,sampleGroups,sampleGroupRepository);
-        }
-
-
-
-        if (!certByUuid.isEmpty()){
-            logger.error("Certificates remain to be processed for submission {}, but we can't find the entries they refer to {}",submissionId,certByUuid.values());
-        }
-
 
         sendSubmissionUpdated(processingCertificateEnvelope.getSubmissionId());
     }
