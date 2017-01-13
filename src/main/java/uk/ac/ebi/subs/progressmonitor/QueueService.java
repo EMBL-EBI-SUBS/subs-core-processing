@@ -31,6 +31,9 @@ public class QueueService {
     private static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
     @Autowired
+    List<Class> submittablesClassList;
+
+    @Autowired
     SubmissionRepository submissionRepository;
 
     @Autowired
@@ -118,21 +121,8 @@ public class QueueService {
         logger.info("received agent results for submission {} with {} certificates ",
                 processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getProcessingCertificates().size());
 
-        List<Class> submittablesClasses = Arrays.asList(
-                Analysis.class,
-                Assay.class,
-                AssayData.class,
-                EgaDac.class,
-                EgaDacPolicy.class,
-                EgaDataset.class,
-                Project.class,
-                Protocol.class,
-                Sample.class,
-                SampleGroup.class,
-                Study.class
-        );
 
-        for (Class submittableClass : submittablesClasses){
+        for (Class submittableClass : submittablesClassList){
             submittablesBulkOperations.applyProcessingCertificates(processingCertificateEnvelope, submittableClass);
         }
 
