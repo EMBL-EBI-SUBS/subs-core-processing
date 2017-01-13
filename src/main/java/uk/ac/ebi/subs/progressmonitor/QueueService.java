@@ -5,12 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.data.Submission;
-import uk.ac.ebi.subs.data.submittable.*;
+import uk.ac.ebi.subs.data.submittable.Sample;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
@@ -21,9 +19,9 @@ import uk.ac.ebi.subs.repository.FullSubmissionService;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
-import uk.ac.ebi.subs.repository.submittable.*;
+import uk.ac.ebi.subs.repository.submittable.SubmittablesBulkOperations;
 
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
@@ -43,29 +41,7 @@ public class QueueService {
     FullSubmissionService fullSubmissionService;
 
     @Autowired
-    AnalysisRepository analysisRepository;
-    @Autowired
-    AssayDataRepository assayDataRepository;
-    @Autowired
-    AssayRepository assayRepository;
-    @Autowired
-    EgaDacPolicyRepository egaDacPolicyRepository;
-    @Autowired
-    EgaDacRepository egaDacRepository;
-    @Autowired
-    EgaDatasetRepository egaDatasetRepository;
-    @Autowired
-    ProjectRepository projectRepository;
-    @Autowired
-    ProtocolRepository protocolRepository;
-    @Autowired
-    SampleGroupRepository sampleGroupRepository;
-    @Autowired
-    SampleRepository sampleRepository;
-    @Autowired
-    StudyRepository studyRepository;
-
-    @Autowired SubmittablesBulkOperations submittablesBulkOperations;
+    SubmittablesBulkOperations submittablesBulkOperations;
 
 
     private RabbitMessagingTemplate rabbitMessagingTemplate;
@@ -113,8 +89,6 @@ public class QueueService {
     }
 
 
-
-
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
     public void checkForProcessedSubmissions(ProcessingCertificateEnvelope processingCertificateEnvelope) {
 
@@ -122,7 +96,7 @@ public class QueueService {
                 processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getProcessingCertificates().size());
 
 
-        for (Class submittableClass : submittablesClassList){
+        for (Class submittableClass : submittablesClassList) {
             submittablesBulkOperations.applyProcessingCertificates(processingCertificateEnvelope, submittableClass);
         }
 
