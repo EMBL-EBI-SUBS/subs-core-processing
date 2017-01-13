@@ -126,6 +126,9 @@ public class QueueService {
             if (certByUuid.containsKey(s.getId())) {
                 ProcessingCertificate cert = certByUuid.remove(s.getId());
                 s.setStatus(cert.getProcessingStatus().name());
+                if (!s.isAccessioned() && cert.getAccession() != null){
+                    s.setAccession(cert.getAccession());
+                }
             } else {
                 listIterator.remove(); //don't bother updating these
             }
