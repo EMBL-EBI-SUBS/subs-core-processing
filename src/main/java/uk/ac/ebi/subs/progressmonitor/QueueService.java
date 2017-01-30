@@ -19,7 +19,7 @@ import uk.ac.ebi.subs.repository.FullSubmissionService;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
-import uk.ac.ebi.subs.repository.submittable.SubmittablesBulkOperations;
+import uk.ac.ebi.subs.repository.repos.SubmittablesBulkOperations;
 
 import java.util.List;
 import java.util.stream.Collectors;
