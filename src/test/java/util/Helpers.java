@@ -1,9 +1,8 @@
 package util;
 
 
-import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.data.component.Domain;
-import uk.ac.ebi.subs.data.submittable.Sample;
+import uk.ac.ebi.subs.repository.model.Sample;
 import uk.ac.ebi.subs.data.Submission;
 
 import java.util.ArrayList;
