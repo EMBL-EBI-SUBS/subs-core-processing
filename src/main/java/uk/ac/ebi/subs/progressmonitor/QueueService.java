@@ -60,7 +60,7 @@ public class QueueService {
 
         if (submission == null) return;
 
-        submission.setStatus(processingCertificate.getProcessingStatus().name()); //TODO rewrite this to use submission status
+//TODO fix in SUBS-333        submission.setStatus(processingCertificate.getProcessingStatus().name()); //TODO rewrite this to use submission status
 
         submissionRepository.save(submission);
     }
