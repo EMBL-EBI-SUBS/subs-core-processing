@@ -18,8 +18,10 @@ import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.FullSubmissionService;
 import uk.ac.ebi.subs.repository.SubmissionRepository;
+import uk.ac.ebi.subs.repository.model.SubmissionStatus;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
+import uk.ac.ebi.subs.repository.repos.SubmissionStatusRepository;
 import uk.ac.ebi.subs.repository.repos.SubmittablesBulkOperations;
 
 import java.util.List;
@@ -44,6 +46,9 @@ public class QueueService {
     @Autowired
     SubmittablesBulkOperations submittablesBulkOperations;
 
+    @Autowired
+    SubmissionStatusRepository submissionStatusRepository;
+
 
     private RabbitMessagingTemplate rabbitMessagingTemplate;
 
@@ -60,9 +65,10 @@ public class QueueService {
 
         if (submission == null) return;
 
-//TODO fix in SUBS-333        submission.setStatus(processingCertificate.getProcessingStatus().name()); //TODO rewrite this to use submission status
+        SubmissionStatus submissionStatus = submission.getSubmissionStatus();
+        submissionStatus.setStatus(processingCertificate.getProcessingStatus().name()); //TODO rewrite this to use submission status
 
-        submissionRepository.save(submission);
+        submissionStatusRepository.save(submissionStatus);
     }
 
     @RabbitListener(queues = Queues.SUBMISSION_SUPPORTING_INFO_PROVIDED)
