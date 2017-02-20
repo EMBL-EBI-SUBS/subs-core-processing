@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.data.FullSubmission;
+import uk.ac.ebi.subs.repository.model.ProcessingStatus;
 import uk.ac.ebi.subs.repository.model.Submission;
 
 import uk.ac.ebi.subs.data.submittable.Sample;
@@ -21,9 +22,11 @@ import uk.ac.ebi.subs.repository.SubmissionRepository;
 import uk.ac.ebi.subs.repository.model.SubmissionStatus;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
+import uk.ac.ebi.subs.repository.repos.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.SubmissionStatusRepository;
 import uk.ac.ebi.subs.repository.repos.SubmittablesBulkOperations;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,6 +45,9 @@ public class QueueService {
 
     @Autowired
     FullSubmissionService fullSubmissionService;
+
+    @Autowired
+    ProcessingStatusRepository processingStatusRepository;
 
     @Autowired
     SubmittablesBulkOperations submittablesBulkOperations;
@@ -102,6 +108,16 @@ public class QueueService {
         logger.info("received agent results for submission {} with {} certificates ",
                 processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getProcessingCertificates().size());
 
+
+        for (ProcessingCertificate cert : processingCertificateEnvelope.getProcessingCertificates()){
+            ProcessingStatus processingStatus = processingStatusRepository.findBySubmittableId(cert.getSubmittableId());
+
+            processingStatus.setStatus(cert.getProcessingStatus());
+            processingStatus.setLastModifiedBy(cert.getArchive().name());
+            processingStatus.setLastModifiedDate(new Date());
+
+            processingStatusRepository.save(processingStatus);
+        }
 
         for (Class submittableClass : submittablesClassList) {
             submittablesBulkOperations.applyProcessingCertificates(processingCertificateEnvelope, submittableClass);
