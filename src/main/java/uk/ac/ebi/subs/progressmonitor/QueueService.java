@@ -18,13 +18,13 @@ import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.FullSubmissionService;
-import uk.ac.ebi.subs.repository.SubmissionRepository;
+import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.model.SubmissionStatus;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
-import uk.ac.ebi.subs.repository.repos.ProcessingStatusRepository;
-import uk.ac.ebi.subs.repository.repos.SubmissionStatusRepository;
-import uk.ac.ebi.subs.repository.repos.SubmittablesBulkOperations;
+import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
+import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.SubmittablesBulkOperations;
 
 import java.util.Date;
 import java.util.List;
