@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
+import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Submission;
 
 import uk.ac.ebi.subs.data.submittable.Sample;
@@ -34,34 +35,26 @@ import java.util.stream.Collectors;
 public class QueueService {
     private static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
-    @Autowired
-    List<Class> submittablesClassList;
 
-    @Autowired
-    SubmissionRepository submissionRepository;
-
-    @Autowired
-    SupportingSampleRepository supportingSampleRepository;
-
-    @Autowired
-    FullSubmissionService fullSubmissionService;
-
-    @Autowired
-    ProcessingStatusRepository processingStatusRepository;
-
-    @Autowired
-    SubmittablesBulkOperations submittablesBulkOperations;
-
-    @Autowired
-    SubmissionStatusRepository submissionStatusRepository;
-
-
-    private RabbitMessagingTemplate rabbitMessagingTemplate;
-
-    @Autowired
-    public QueueService(RabbitMessagingTemplate rabbitMessagingTemplate) {
+    public QueueService(List<Class<? extends StoredSubmittable>> submittablesClassList, SubmissionRepository submissionRepository, SupportingSampleRepository supportingSampleRepository, FullSubmissionService fullSubmissionService, ProcessingStatusRepository processingStatusRepository, SubmittablesBulkOperations submittablesBulkOperations, SubmissionStatusRepository submissionStatusRepository, RabbitMessagingTemplate rabbitMessagingTemplate) {
+        this.submittablesClassList = submittablesClassList;
+        this.submissionRepository = submissionRepository;
+        this.supportingSampleRepository = supportingSampleRepository;
+        this.fullSubmissionService = fullSubmissionService;
+        this.processingStatusRepository = processingStatusRepository;
+        this.submittablesBulkOperations = submittablesBulkOperations;
+        this.submissionStatusRepository = submissionStatusRepository;
         this.rabbitMessagingTemplate = rabbitMessagingTemplate;
     }
+
+    private List<Class<? extends StoredSubmittable>> submittablesClassList;
+    private SubmissionRepository submissionRepository;
+    private SupportingSampleRepository supportingSampleRepository;
+    private FullSubmissionService fullSubmissionService;
+    private ProcessingStatusRepository processingStatusRepository;
+    private SubmittablesBulkOperations submittablesBulkOperations;
+    private SubmissionStatusRepository submissionStatusRepository;
+    private RabbitMessagingTemplate rabbitMessagingTemplate;
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR_STATUS_UPDATE)
     public void submissionStatusUpdated(ProcessingCertificate processingCertificate) {
@@ -112,7 +105,15 @@ public class QueueService {
         for (ProcessingCertificate cert : processingCertificateEnvelope.getProcessingCertificates()){
             ProcessingStatus processingStatus = processingStatusRepository.findBySubmittableId(cert.getSubmittableId());
 
+            if (cert.getAccession() != null){
+                processingStatus.setAccession(cert.getAccession());
+            }
+
+            processingStatus.setArchive(cert.getArchive().name());
+            processingStatus.setMessage(cert.getMessage());
+
             processingStatus.setStatus(cert.getProcessingStatus());
+
             processingStatus.setLastModifiedBy(cert.getArchive().name());
             processingStatus.setLastModifiedDate(new Date());
 
