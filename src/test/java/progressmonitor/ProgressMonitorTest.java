@@ -55,10 +55,10 @@ public class ProgressMonitorTest {
     }
 
     @Test
-    public void getSubmissionByDomainName() {
+    public void getSubmissionByTeamName() {
         try {
             Submission sub1 = submissionRepository.findAll(new PageRequest(0,100)).getContent().get(0);
-            List<Submission> submissionList = submissionRepository.findByDomainName("subs-test", new PageRequest(0,100)).getContent();
+            List<Submission> submissionList = submissionRepository.findByTeamName("subs-test", new PageRequest(0,100)).getContent();
 
             Assert.assertTrue(submissionList.contains(sub1));
 
