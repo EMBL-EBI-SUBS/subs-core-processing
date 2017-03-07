@@ -1,7 +1,7 @@
 package util;
 
 
-import uk.ac.ebi.subs.data.component.Domain;
+import uk.ac.ebi.subs.data.component.Team;
 import uk.ac.ebi.subs.repository.model.Sample;
 import uk.ac.ebi.subs.repository.model.Submission;
 
@@ -31,9 +31,9 @@ public class Helpers {
     public static Submission generateTestSubmission() {
         Submission sub = new Submission();
         sub.setId(UUID.randomUUID().toString());
-        Domain d = new Domain();
+        Team d = new Team();
         d.setName("subs-test");
-        sub.setDomain(d);
+        sub.setTeam(d);
         return sub;
     }
 }
