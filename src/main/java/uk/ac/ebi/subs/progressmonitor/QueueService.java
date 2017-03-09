@@ -103,7 +103,7 @@ public class QueueService {
 
 
         for (ProcessingCertificate cert : processingCertificateEnvelope.getProcessingCertificates()){
-            ProcessingStatus processingStatus = processingStatusRepository.findBySubmittableId(cert.getSubmittableId());
+            ProcessingStatus processingStatus = processingStatusRepository.findByItemId(cert.getSubmittableId());
 
             if (cert.getAccession() != null){
                 processingStatus.setAccession(cert.getAccession());
