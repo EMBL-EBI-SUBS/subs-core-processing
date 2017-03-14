@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
@@ -103,7 +102,7 @@ public class QueueService {
 
 
         for (ProcessingCertificate cert : processingCertificateEnvelope.getProcessingCertificates()){
-            ProcessingStatus processingStatus = processingStatusRepository.findByItemId(cert.getSubmittableId());
+            ProcessingStatus processingStatus = processingStatusRepository.findBySubmittableId(cert.getSubmittableId());
 
             if (cert.getAccession() != null){
                 processingStatus.setAccession(cert.getAccession());
