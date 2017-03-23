@@ -11,4 +11,11 @@ public interface ApiSupportService {
      * @param submission
      */
     void deleteSubmissionContents(Submission submission);
+
+    /**
+     * Once a submission has been submitted, change the processing status of its submittables from 'draft' to 'submitted'
+     *
+     * @param submission
+     */
+    void markContentsAsSubmitted(Submission submission);
 }

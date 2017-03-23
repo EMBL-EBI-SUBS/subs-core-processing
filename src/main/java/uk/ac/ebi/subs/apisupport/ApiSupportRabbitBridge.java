@@ -8,7 +8,6 @@ import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.repository.model.Submission;
-import uk.ac.ebi.subs.repository.repos.submittables.SubmittableRepository;
 
 @Component
 public class ApiSupportRabbitBridge {
@@ -29,6 +28,12 @@ public class ApiSupportRabbitBridge {
         logger.info("submission contents for deletion {}",submission);
 
         apiSupportService.deleteSubmissionContents(submission);
+    }
 
+    @RabbitListener(queues = Queues.SUBMISSION_SUBMITTED_MARK_SUBMITTABLES)
+    public void onSubmissionMarkSubmittablesSubmitted(Submission submission) {
+        logger.info("Marking submittables as submitted for {}",submission.getId());
+
+        apiSupportService.markContentsAsSubmitted(submission);
     }
 }
