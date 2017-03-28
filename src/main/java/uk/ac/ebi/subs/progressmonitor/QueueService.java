@@ -134,23 +134,11 @@ public class QueueService {
      * @param submissionId
      */
     private void sendSubmissionUpdated(String submissionId) {
-        FullSubmission submission = fullSubmissionService.fetchOne(submissionId);
-
-        List<Sample> supportingSamples = supportingSampleRepository
-                .findBySubmissionId(submissionId)
-                .stream()
-                .map(ss -> ss.getSample())
-                .collect(Collectors.toList());
-
-
-        SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(submission);
-        submissionEnvelope.setSupportingSamples(supportingSamples);
-
 
         rabbitMessagingTemplate.convertAndSend(
                 Exchanges.SUBMISSIONS,
                 Topics.EVENT_SUBMISSION_UPDATED,
-                submissionEnvelope
+                submissionRepository.findOne(submissionId)
         );
 
         logger.info("submission {} update message sent", submissionId);
