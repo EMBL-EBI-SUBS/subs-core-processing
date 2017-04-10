@@ -5,12 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.stereotype.Component;
-import uk.ac.ebi.subs.data.FullSubmission;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Submission;
 
-import uk.ac.ebi.subs.data.submittable.Sample;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
@@ -137,7 +135,7 @@ public class QueueService {
 
         rabbitMessagingTemplate.convertAndSend(
                 Exchanges.SUBMISSIONS,
-                Topics.EVENT_SUBMISSION_UPDATED,
+                Topics.EVENT_SUBMISSION_PROCESSING_UPDATED,
                 submissionRepository.findOne(submissionId)
         );
 
