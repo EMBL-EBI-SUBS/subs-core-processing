@@ -2,13 +2,11 @@ package uk.ac.ebi.subs.progressmonitor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
-import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.model.SubmissionStatus;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
@@ -28,14 +26,14 @@ public class MonitorServiceImpl implements MonitorService {
 
 
     public MonitorServiceImpl(
-            List<Class<? extends StoredSubmittable>> submittablesClassList,
             SubmissionRepository submissionRepository,
             SupportingSampleRepository supportingSampleRepository,
             ProcessingStatusRepository processingStatusRepository,
             SubmittablesBulkOperations submittablesBulkOperations,
-            SubmissionStatusRepository submissionStatusRepository,
-            RabbitMessagingTemplate rabbitMessagingTemplate) {
-        this.submittablesClassList = submittablesClassList;
+            SubmissionStatusRepository submissionStatusRepository
+
+    ) {
+
         this.submissionRepository = submissionRepository;
         this.supportingSampleRepository = supportingSampleRepository;
         this.processingStatusRepository = processingStatusRepository;
@@ -44,10 +42,9 @@ public class MonitorServiceImpl implements MonitorService {
 
     }
 
-    private List<Class<? extends StoredSubmittable>> submittablesClassList;
+
     private SubmissionRepository submissionRepository;
     private SupportingSampleRepository supportingSampleRepository;
-
     private ProcessingStatusRepository processingStatusRepository;
     private SubmittablesBulkOperations submittablesBulkOperations;
     private SubmissionStatusRepository submissionStatusRepository;
@@ -112,11 +109,9 @@ public class MonitorServiceImpl implements MonitorService {
             processingStatusRepository.save(processingStatus);
         }
 
-        for (Class submittableClass : submittablesClassList) {
-            submittablesBulkOperations.applyProcessingCertificates(processingCertificateEnvelope, submittableClass);
-        }
-    }
+        submittablesBulkOperations.applyProcessingCertificates(processingCertificateEnvelope);
 
+    }
 
 
 }
