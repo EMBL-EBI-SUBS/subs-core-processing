@@ -15,7 +15,7 @@ import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
-import uk.ac.ebi.subs.repository.FullSubmissionService;
+import uk.ac.ebi.subs.repository.SubmissionEnvelopeService;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.model.SubmissionStatus;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
@@ -33,11 +33,14 @@ public class QueueService {
     private static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
 
-    public QueueService(List<Class<? extends StoredSubmittable>> submittablesClassList, SubmissionRepository submissionRepository, SupportingSampleRepository supportingSampleRepository, FullSubmissionService fullSubmissionService, ProcessingStatusRepository processingStatusRepository, SubmittablesBulkOperations submittablesBulkOperations, SubmissionStatusRepository submissionStatusRepository, RabbitMessagingTemplate rabbitMessagingTemplate) {
+    public QueueService(List<Class<? extends StoredSubmittable>> submittablesClassList, SubmissionRepository submissionRepository,
+                        SupportingSampleRepository supportingSampleRepository, SubmissionEnvelopeService submissionEnvelopeService,
+                        ProcessingStatusRepository processingStatusRepository, SubmittablesBulkOperations submittablesBulkOperations,
+                        SubmissionStatusRepository submissionStatusRepository, RabbitMessagingTemplate rabbitMessagingTemplate) {
         this.submittablesClassList = submittablesClassList;
         this.submissionRepository = submissionRepository;
         this.supportingSampleRepository = supportingSampleRepository;
-        this.fullSubmissionService = fullSubmissionService;
+        this.submissionEnvelopeService = submissionEnvelopeService;
         this.processingStatusRepository = processingStatusRepository;
         this.submittablesBulkOperations = submittablesBulkOperations;
         this.submissionStatusRepository = submissionStatusRepository;
@@ -47,7 +50,7 @@ public class QueueService {
     private List<Class<? extends StoredSubmittable>> submittablesClassList;
     private SubmissionRepository submissionRepository;
     private SupportingSampleRepository supportingSampleRepository;
-    private FullSubmissionService fullSubmissionService;
+    private SubmissionEnvelopeService submissionEnvelopeService;
     private ProcessingStatusRepository processingStatusRepository;
     private SubmittablesBulkOperations submittablesBulkOperations;
     private SubmissionStatusRepository submissionStatusRepository;
