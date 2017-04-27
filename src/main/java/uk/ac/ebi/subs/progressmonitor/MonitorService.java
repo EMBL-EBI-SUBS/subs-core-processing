@@ -9,7 +9,15 @@ import uk.ac.ebi.subs.processing.SubmissionEnvelope;
  */
 public interface MonitorService {
 
+    /**
+     * store supporting information received from archives
+     * @param submissionEnvelope
+     */
     void storeSupportingInformation(SubmissionEnvelope submissionEnvelope);
 
+    /**
+     * update accessions + statuses using information in a processingCertificateEnvelop
+     * @param processingCertificateEnvelope
+     */
     void updateSubmittablesFromCertificates(ProcessingCertificateEnvelope processingCertificateEnvelope);
 }

@@ -13,6 +13,10 @@ import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 
+/**
+ * Monitor is responsible for receiving information from archive agents and updating the state of the submission in our
+ * database. Once the state is updated, a notification has to be sent to Rabbit to prompt the next dispatch cycle
+ */
 @Component
 public class MonitorRabbitBridge {
     private static final Logger logger = LoggerFactory.getLogger(MonitorRabbitBridge.class);
