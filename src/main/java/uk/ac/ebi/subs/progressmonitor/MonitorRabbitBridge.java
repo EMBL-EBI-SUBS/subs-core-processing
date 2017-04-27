@@ -28,22 +28,16 @@ public class MonitorRabbitBridge {
     private RabbitMessagingTemplate rabbitMessagingTemplate;
     private SubmissionRepository submissionRepository;
 
-    @RabbitListener(queues = Queues.SUBMISSION_MONITOR_STATUS_UPDATE)
-    public void submissionStatusUpdated(ProcessingCertificate processingCertificate) {
-        monitorService.submissionStatusUpdated(processingCertificate);
-    }
-
     @RabbitListener(queues = Queues.SUBMISSION_SUPPORTING_INFO_PROVIDED)
-    public void handleSupportingInfo(SubmissionEnvelope submissionEnvelope) {
-        monitorService.handleSupportingInfo(submissionEnvelope);
+    public void storeSupportingInformation(SubmissionEnvelope submissionEnvelope) {
+        monitorService.storeSupportingInformation(submissionEnvelope);
 
         sendSubmissionUpdated(submissionEnvelope.getSubmission().getId());
     }
 
-
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
-    public void checkForProcessedSubmissions(ProcessingCertificateEnvelope processingCertificateEnvelope) {
-        monitorService.checkForProcessedSubmissions(processingCertificateEnvelope);
+    public void updateSubmittablesFromCertificates(ProcessingCertificateEnvelope processingCertificateEnvelope) {
+        monitorService.updateSubmittablesFromCertificates(processingCertificateEnvelope);
 
         sendSubmissionUpdated(processingCertificateEnvelope.getSubmissionId());
     }

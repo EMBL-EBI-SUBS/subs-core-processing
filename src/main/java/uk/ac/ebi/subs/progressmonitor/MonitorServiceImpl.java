@@ -51,21 +51,7 @@ public class MonitorServiceImpl implements MonitorService {
 
 
     @Override
-    public void submissionStatusUpdated(ProcessingCertificate processingCertificate) {
-        if (processingCertificate.getSubmittableId() == null) return;
-
-        Submission submission = submissionRepository.findOne(processingCertificate.getSubmittableId());
-
-        if (submission == null) return;
-
-        SubmissionStatus submissionStatus = submission.getSubmissionStatus();
-        submissionStatus.setStatus(processingCertificate.getProcessingStatus().name()); //TODO rewrite this to use submission status
-
-        submissionStatusRepository.save(submissionStatus);
-    }
-
-    @Override
-    public void handleSupportingInfo(SubmissionEnvelope submissionEnvelope) {
+    public void storeSupportingInformation(SubmissionEnvelope submissionEnvelope) {
 
         final String submissionId = submissionEnvelope.getSubmission().getId();
 
@@ -85,7 +71,7 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     @Override
-    public void checkForProcessedSubmissions(ProcessingCertificateEnvelope processingCertificateEnvelope) {
+    public void updateSubmittablesFromCertificates(ProcessingCertificateEnvelope processingCertificateEnvelope) {
 
         logger.info("received agent results for submission {} with {} certificates ",
                 processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getProcessingCertificates().size());
