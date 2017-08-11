@@ -39,6 +39,13 @@ dependencies {
     testCompile("uk.ac.ebi.subs:subs-test-categories:0.1.0-SNAPSHOT")
 }
 
+task sourceJar(type: Jar) { from sourceSets.main.allJava }
+
+artifacts {
+    archives jar
+    archives sourceJar { classifier "sources" }
+}
+
 uploadArchives {
     repositories {
         mavenDeployer {
