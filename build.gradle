@@ -1,5 +1,5 @@
 group 'uk.ac.ebi.subs'
-version '0.2.0-SNAPSHOT'
+version '0.2.1-SNAPSHOT'
 
 
 apply plugin: 'java'
@@ -142,7 +142,7 @@ task deployJar(type: SshTask, dependsOn: 'assemble') {
                 println "creating symbolic link to $jar.archiveName"
                 def result = execute "ln -s -f $jarDeployDir/$jar.archiveName $jarDeployDir/$jar.baseName" + ".jar", ignoreError: true
                 println result
- 
+                execute "chmod u+x $jarDeployDir/*", ignoreError: false 
             }
         }
     }
