@@ -43,7 +43,10 @@ task sourceJar(type: Jar) { from sourceSets.main.allJava }
 
 artifacts {
     archives jar
-    archives sourceJar { classifier "sources" }
+    archives sourceJar {
+        classifier "sources" 
+        destinationDir = new File("build/libs/sources")
+    }
 }
 
 uploadArchives {
