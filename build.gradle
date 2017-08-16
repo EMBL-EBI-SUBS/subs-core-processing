@@ -30,9 +30,9 @@ dependencies {
 
     compile("uk.ac.ebi.subs:subs-processing-model:0.1.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-repository:0.1.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-data-model:1.0.3-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-data-model:0.1.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:1.0.3-SNAPSHOT")
-    compile("uk.ac.ebi.subs:validator-common:1.16.0-SNAPSHOT")
+    compile("uk.ac.ebi.subs:validator-common:0.1.0-SNAPSHOT")
 
     compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
 
@@ -110,7 +110,16 @@ if (project.hasProperty('sshKeyFile')) {
 if (project.hasProperty('sshPassphrase')) {
     ssh.settings.passphrase = sshPassphrase
 }
- 
+
+task('externalCiTest', type: Test) {
+    useJUnit {
+        excludeCategories 'uk.ac.ebi.subs.MongoDBDependentTest'
+    }
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+
 task printJarName {
     doLast {
         println "$jar.archivePath.name"

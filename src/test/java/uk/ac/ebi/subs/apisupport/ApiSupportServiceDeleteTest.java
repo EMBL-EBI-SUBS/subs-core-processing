@@ -3,12 +3,14 @@ package uk.ac.ebi.subs.apisupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit4.SpringRunner;
 import uk.ac.ebi.subs.ApiSupportApplication;
+import uk.ac.ebi.subs.MongoDBDependentTest;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
 import uk.ac.ebi.subs.repository.model.Sample;
 import uk.ac.ebi.subs.repository.model.Submission;
@@ -25,6 +27,7 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ApiSupportApplication.class)
+@Category(MongoDBDependentTest.class)
 public class ApiSupportServiceDeleteTest {
 
     @Test
