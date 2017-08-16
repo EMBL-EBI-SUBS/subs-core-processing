@@ -1,6 +1,5 @@
 group 'uk.ac.ebi.subs'
-version '0.2.1-SNAPSHOT'
-
+version '0.2.2-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
@@ -31,9 +30,9 @@ dependencies {
 
     compile("uk.ac.ebi.subs:subs-processing-model:0.1.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-repository:0.1.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-data-model:1.0.3-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-data-model:0.1.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:1.0.3-SNAPSHOT")
-    compile("uk.ac.ebi.subs:validator-common:1.16.0-SNAPSHOT")
+    compile("uk.ac.ebi.subs:validator-common:0.1.0-SNAPSHOT")
 
     compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
 
@@ -50,7 +49,10 @@ task sourceJar(type: Jar) { from sourceSets.main.allJava }
 
 artifacts {
     archives jar
-    archives sourceJar { classifier "sources" }
+    archives sourceJar {
+        classifier "sources" 
+        destinationDir = new File("build/libs/sources")
+    }
 }
 
 uploadArchives {
@@ -72,10 +74,10 @@ uploadArchives {
 
             pom.project {
                 packaging 'jar'
-                url 'https://github.com/EMBL-EBI-SUBS/subs-repository'
+                url 'https://github.com/EMBL-EBI-SUBS/subs-api-support'
 
                 scm {
-                    url 'https://github.com/EMBL-EBI-SUBS/subs-repository.git'
+                    url 'https://github.com/EMBL-EBI-SUBS/subs-api-support.git'
                 }
 
                 licenses {
@@ -108,7 +110,16 @@ if (project.hasProperty('sshKeyFile')) {
 if (project.hasProperty('sshPassphrase')) {
     ssh.settings.passphrase = sshPassphrase
 }
- 
+
+task('externalCiTest', type: Test) {
+    useJUnit {
+        excludeCategories 'uk.ac.ebi.subs.MongoDBDependentTest'
+    }
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+
 task printJarName {
     doLast {
         println "$jar.archivePath.name"
