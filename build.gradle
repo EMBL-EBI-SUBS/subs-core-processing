@@ -31,8 +31,8 @@ dependencies {
     compile("org.springframework.boot:spring-boot-starter-data-mongodb")
     compile("org.springframework.boot:spring-boot-starter-amqp")
 
-    compile("uk.ac.ebi.subs:subs-processing-model:0.1.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-repository:0.1.0-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-processing-model:0.1.1-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-repository:0.1.1-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-data-model:0.1.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:0.1.0-SNAPSHOT")
 
