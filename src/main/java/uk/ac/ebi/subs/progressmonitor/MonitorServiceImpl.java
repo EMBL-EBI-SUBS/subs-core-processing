@@ -7,14 +7,12 @@ import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
-import uk.ac.ebi.subs.repository.model.Submission;
-import uk.ac.ebi.subs.repository.model.SubmissionStatus;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
-import uk.ac.ebi.subs.repository.repos.submittables.SubmittablesBulkOperations;
+
 
 import java.util.Date;
 import java.util.List;
@@ -80,7 +78,7 @@ public class MonitorServiceImpl implements MonitorService {
         for (ProcessingCertificate cert : processingCertificateEnvelope.getProcessingCertificates()) {
             ProcessingStatus processingStatus = processingStatusRepository.findBySubmittableId(cert.getSubmittableId());
 
-            if (processingStatus == null){
+            if (processingStatus == null) {
                 continue;
             }
 
