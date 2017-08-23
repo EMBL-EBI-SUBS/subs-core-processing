@@ -70,10 +70,10 @@ uploadArchives {
 
             pom.project {
                 packaging 'jar'
-                url 'https://github.com/EMBL-EBI-SUBS/subs-processing-model'
+                url 'https://github.com/EMBL-EBI-SUBS/subs-progress-monitor'
 
                 scm {
-                    url 'https://github.com/EMBL-EBI-SUBS/subs-processing-model.git'
+                    url 'https://github.com/EMBL-EBI-SUBS/subs-progress-monitor.git'
                 }
 
                 licenses {
@@ -149,8 +149,6 @@ task deployJar(type: SshTask, dependsOn: 'assemble') {
         knownHosts = allowAnyHosts
     }
 }
-
-mainClassName = "uk.ac.ebi.subs.ApiSupportApplication"
 
 springBoot {
     executable = true
