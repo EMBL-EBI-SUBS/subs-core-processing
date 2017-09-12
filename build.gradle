@@ -38,7 +38,6 @@ dependencies {
 
     testCompile("junit:junit")
     testCompile("org.springframework.boot:spring-boot-starter-test")
-    testCompile("uk.ac.ebi.subs:subs-test-categories:0.1.0-SNAPSHOT")
 
     compile 'org.springframework.security:spring-security-core'
 }
