@@ -34,38 +34,6 @@ import static org.junit.Assert.assertThat;
 @Category(MongoDBDependentTest.class)
 public class ApiSupportServiceDeleteTest {
 
-    @Test
-    public void doNotDeleteIfSubmissionStillPresent(){
-        apiSupportService.deleteSubmissionContents(submission);
-
-        Submission storedSubmission = submissionRepository.findOne(submissionId);
-
-        assertThat(storedSubmission, notNullValue());
-
-        assertThat(sampleRepository.findBySubmissionId(submissionId),hasSize(1));
-        assertThat(processingStatusRepository.findBySubmissionId(submissionId),hasSize(1));
-        assertThat(submissionStatusRepository.findAll(new PageRequest(0,1)).getTotalElements(), is(equalTo(1L)));
-
-    }
-
-    @Test
-    public void doDeleteIfSubmissionDeleted(){
-        submissionRepository.delete(submission);
-
-        apiSupportService.deleteSubmissionContents(submission);
-
-        Submission storedSubmission = submissionRepository.findOne(submissionId);
-
-        assertThat(storedSubmission, nullValue());
-
-        assertThat(sampleRepository.findBySubmissionId(submissionId),hasSize(0));
-        assertThat(processingStatusRepository.findBySubmissionId(submissionId),hasSize(0));
-        assertThat(submissionStatusRepository.findAll(new PageRequest(0,1)).getTotalElements(), is(equalTo(0L)));
-
-    }
-
-
-
     private String submissionId = "thisIsAFakeId";
 
     @Autowired private ApiSupportService apiSupportService;
@@ -82,20 +50,43 @@ public class ApiSupportServiceDeleteTest {
     @Autowired
     private SubmissionStatusRepository submissionStatusRepository;
 
-    @After
-    public void tearDown(){
-        Stream.of(sampleRepository,submissionRepository,processingStatusRepository,submissionStatusRepository).forEach(
-                repo -> repo.deleteAll()
-        );
-    }
-
     private Submission submission;
 
     @Before
     public void buildUp(){
         tearDown();
         createSubmissionContents();
+    }
 
+    @Test
+    public void deleteSubmissionContentsAndNotSubmission(){
+        assertThat(submissionRepository.findOne(submissionId), notNullValue());
+
+        apiSupportService.deleteSubmissionContents(submission);
+
+        assertThat(sampleRepository.findBySubmissionId(submissionId), hasSize(0));
+        assertThat(processingStatusRepository.findBySubmissionId(submissionId), hasSize(0));
+        assertThat(submissionStatusRepository.findAll(new PageRequest(0, 1)).getTotalElements(), is(equalTo(0L)));
+        assertThat(submissionRepository.findOne(submissionId), notNullValue());
+    }
+
+    @Test
+    public void deleteSubmissionAndSubmissionContents(){
+        submissionRepository.delete(submission);
+
+        apiSupportService.deleteSubmissionContents(submission);
+        assertThat(submissionRepository.findOne(submissionId), nullValue());
+
+        assertThat(sampleRepository.findBySubmissionId(submissionId),hasSize(0));
+        assertThat(processingStatusRepository.findBySubmissionId(submissionId),hasSize(0));
+        assertThat(submissionStatusRepository.findAll(new PageRequest(0,1)).getTotalElements(), is(equalTo(0L)));
+    }
+
+    @After
+    public void tearDown(){
+        Stream.of(sampleRepository,submissionRepository,processingStatusRepository,submissionStatusRepository).forEach(
+                repo -> repo.deleteAll()
+        );
     }
 
     private void createSubmissionContents(){
@@ -113,6 +104,4 @@ public class ApiSupportServiceDeleteTest {
         processingStatusRepository.save(sample.getProcessingStatus());
         sampleRepository.save(sample);
     }
-
-
 }

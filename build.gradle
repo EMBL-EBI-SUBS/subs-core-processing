@@ -1,5 +1,5 @@
 group 'uk.ac.ebi.subs'
-version '0.2.3-SNAPSHOT'
+version '0.3.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
@@ -30,6 +30,7 @@ dependencies {
     compile("uk.ac.ebi.subs:subs-repository:0.1.2-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-data-model:0.1.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:0.2.0-SNAPSHOT")
+    compile("uk.ac.ebi.subs:validator-common:0.2.2-SNAPSHOT")
 
     compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
 
@@ -109,7 +110,7 @@ if (project.hasProperty('sshPassphrase')) {
 
 task('externalCiTest', type: Test) {
     useJUnit {
-        excludeCategories 'uk.ac.ebi.subs.MongoDBDependentTest'
+        excludeCategories 'uk.ac.ebi.subs.apisupport.utils.MongoDBDependentTest'
     }
     testLogging {
         exceptionFormat = 'full'
@@ -164,4 +165,3 @@ mainClassName = "uk.ac.ebi.subs.ApiSupportApplication"
 springBoot {
     executable = true
 }
-
