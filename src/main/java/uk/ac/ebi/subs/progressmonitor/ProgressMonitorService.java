@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class MonitorService {
-    private static final Logger logger = LoggerFactory.getLogger(MonitorService.class);
+public class ProgressMonitorService {
+    private static final Logger logger = LoggerFactory.getLogger(ProgressMonitorService.class);
 
     @Autowired private SupportingSampleRepository supportingSampleRepository;
     @Autowired private ProcessingStatusRepository processingStatusRepository;
@@ -43,7 +43,6 @@ public class MonitorService {
                 submissionEnvelope.getSubmission().getId(),
                 supportingSamples.size()
         );
-
         supportingSampleRepository.save(supportingSamples);
     }
 

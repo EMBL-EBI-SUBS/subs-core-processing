@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
-import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
@@ -18,17 +17,16 @@ import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
  * database. Once the state is updated, a notification has to be sent to Rabbit to prompt the next dispatch cycle
  */
 @Component
-public class MonitorRabbitBridge {
-    private static final Logger logger = LoggerFactory.getLogger(MonitorRabbitBridge.class);
+public class ProgressMonitorListener {
+    private static final Logger logger = LoggerFactory.getLogger(ProgressMonitorListener.class);
 
-
-    public MonitorRabbitBridge(MonitorService monitorService, RabbitMessagingTemplate rabbitMessagingTemplate, SubmissionRepository submissionRepository) {
+    public ProgressMonitorListener(ProgressMonitorService monitorService, RabbitMessagingTemplate rabbitMessagingTemplate, SubmissionRepository submissionRepository) {
         this.monitorService = monitorService;
         this.rabbitMessagingTemplate = rabbitMessagingTemplate;
         this.submissionRepository = submissionRepository;
     }
 
-    private MonitorService monitorService;
+    private ProgressMonitorService monitorService;
     private RabbitMessagingTemplate rabbitMessagingTemplate;
     private SubmissionRepository submissionRepository;
 
@@ -63,6 +61,5 @@ public class MonitorRabbitBridge {
 
         logger.info("submission {} update message sent", submissionId);
     }
-
 
 }
