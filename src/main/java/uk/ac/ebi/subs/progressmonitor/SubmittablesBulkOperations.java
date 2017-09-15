@@ -40,8 +40,6 @@ public class SubmittablesBulkOperations {
         }
     }
 
-
-
     public void applyProcessingCertificates(ProcessingCertificateEnvelope envelope, Class submittableClass) {
         Assert.notNull(envelope);
         Assert.notNull(envelope.getSubmissionId());
@@ -80,8 +78,6 @@ public class SubmittablesBulkOperations {
                     writeResult.getModifiedCount()
             );
         }
-
     }
-
 
 }
