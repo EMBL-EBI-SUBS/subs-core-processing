@@ -2,7 +2,6 @@ package uk.ac.ebi.subs.progressmonitor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
@@ -20,9 +19,15 @@ import java.util.stream.Collectors;
 public class ProgressMonitorService {
     private static final Logger logger = LoggerFactory.getLogger(ProgressMonitorService.class);
 
-    @Autowired private SupportingSampleRepository supportingSampleRepository;
-    @Autowired private ProcessingStatusRepository processingStatusRepository;
-    @Autowired private SubmittablesBulkOperations submittablesBulkOperations;
+    private SupportingSampleRepository supportingSampleRepository;
+    private ProcessingStatusRepository processingStatusRepository;
+    private SubmittablesBulkOperations submittablesBulkOperations;
+
+    public ProgressMonitorService(SupportingSampleRepository supportingSampleRepository, ProcessingStatusRepository processingStatusRepository, SubmittablesBulkOperations submittablesBulkOperations) {
+        this.supportingSampleRepository = supportingSampleRepository;
+        this.processingStatusRepository = processingStatusRepository;
+        this.submittablesBulkOperations = submittablesBulkOperations;
+    }
 
     /**
      * store supporting information received from archives
