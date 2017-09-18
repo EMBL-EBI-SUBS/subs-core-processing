@@ -29,6 +29,3 @@ before_install:
   -in gradle.properties.enc -out gradle.properties -d
 after_success:
   - test $TRAVIS_BRANCH = "master" && ./gradlew uploadArchives
-group: "stable"
-dist: "precise"
-os: "linux"
