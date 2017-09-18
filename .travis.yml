@@ -14,7 +14,7 @@ addons:
     - mongodb-org-shell
 install: "./gradlew assemble"
 before_script:
-- sleep 25
+- sleep 15
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/

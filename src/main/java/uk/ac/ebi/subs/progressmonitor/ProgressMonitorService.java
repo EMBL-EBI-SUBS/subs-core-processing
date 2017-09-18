@@ -2,53 +2,37 @@ package uk.ac.ebi.subs.progressmonitor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
 import uk.ac.ebi.subs.repository.processing.SupportingSample;
 import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
-import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
-import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
-
 
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
-public class MonitorServiceImpl implements MonitorService {
-    private static final Logger logger = LoggerFactory.getLogger(MonitorServiceImpl.class);
+@Service
+public class ProgressMonitorService {
+    private static final Logger logger = LoggerFactory.getLogger(ProgressMonitorService.class);
 
-
-    public MonitorServiceImpl(
-            SubmissionRepository submissionRepository,
-            SupportingSampleRepository supportingSampleRepository,
-            ProcessingStatusRepository processingStatusRepository,
-            SubmittablesBulkOperations submittablesBulkOperations,
-            SubmissionStatusRepository submissionStatusRepository
-
-    ) {
-
-        this.submissionRepository = submissionRepository;
-        this.supportingSampleRepository = supportingSampleRepository;
-        this.processingStatusRepository = processingStatusRepository;
-        this.submittablesBulkOperations = submittablesBulkOperations;
-        this.submissionStatusRepository = submissionStatusRepository;
-
-    }
-
-
-    private SubmissionRepository submissionRepository;
     private SupportingSampleRepository supportingSampleRepository;
     private ProcessingStatusRepository processingStatusRepository;
     private SubmittablesBulkOperations submittablesBulkOperations;
-    private SubmissionStatusRepository submissionStatusRepository;
 
+    public ProgressMonitorService(SupportingSampleRepository supportingSampleRepository, ProcessingStatusRepository processingStatusRepository, SubmittablesBulkOperations submittablesBulkOperations) {
+        this.supportingSampleRepository = supportingSampleRepository;
+        this.processingStatusRepository = processingStatusRepository;
+        this.submittablesBulkOperations = submittablesBulkOperations;
+    }
 
-    @Override
+    /**
+     * store supporting information received from archives
+     * @param submissionEnvelope
+     */
     public void storeSupportingInformation(SubmissionEnvelope submissionEnvelope) {
 
         final String submissionId = submissionEnvelope.getSubmission().getId();
@@ -64,11 +48,13 @@ public class MonitorServiceImpl implements MonitorService {
                 submissionEnvelope.getSubmission().getId(),
                 supportingSamples.size()
         );
-
         supportingSampleRepository.save(supportingSamples);
     }
 
-    @Override
+    /**
+     * update accessions + statuses using information in a processingCertificateEnvelop
+     * @param processingCertificateEnvelope
+     */
     public void updateSubmittablesFromCertificates(ProcessingCertificateEnvelope processingCertificateEnvelope) {
 
         logger.info("received agent results for submission {} with {} certificates ",
@@ -76,6 +62,11 @@ public class MonitorServiceImpl implements MonitorService {
 
 
         for (ProcessingCertificate cert : processingCertificateEnvelope.getProcessingCertificates()) {
+
+            if (cert.getSubmittableId() == null) {
+                throw new NullSubmittableIdException("Processing Certificate Submittable Id can't be NULL.");
+            }
+
             ProcessingStatus processingStatus = processingStatusRepository.findBySubmittableId(cert.getSubmittableId());
 
             if (processingStatus == null) {
@@ -98,8 +89,5 @@ public class MonitorServiceImpl implements MonitorService {
         }
 
         submittablesBulkOperations.applyProcessingCertificates(processingCertificateEnvelope);
-
     }
-
-
 }

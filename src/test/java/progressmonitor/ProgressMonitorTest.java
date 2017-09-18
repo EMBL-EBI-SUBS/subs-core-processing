@@ -1,70 +1,79 @@
 package progressmonitor;
 
-import org.junit.Assert;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
-import uk.ac.ebi.subs.repository.model.Submission;
+import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
+import uk.ac.ebi.subs.processing.ProcessingCertificate;
+import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
+import uk.ac.ebi.subs.progressmonitor.ProgressMonitorService;
+import uk.ac.ebi.subs.progressmonitor.SubmittablesBulkOperations;
+import uk.ac.ebi.subs.repository.config.SubmittableConfig;
+import uk.ac.ebi.subs.repository.model.ProcessingStatus;
+import uk.ac.ebi.subs.repository.model.StoredSubmittable;
+import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
+import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import util.Helpers;
 
-import java.util.List;
+import java.util.Arrays;
+
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@EnableMongoRepositories(basePackageClasses = SubmissionRepository.class)
-@SpringBootTest(classes = ProgressMonitorTestConfiguration.class)
+@EnableMongoRepositories(basePackageClasses = {
+        ProcessingStatusRepository.class,
+        SubmittablesBulkOperations.class,
+        SupportingSampleRepository.class
+})
+@EnableAutoConfiguration
+@SpringBootTest(classes = {
+        ProgressMonitorService.class,
+        SubmittablesBulkOperations.class,
+        StoredSubmittable.class,
+        StoredSubmittable.class,
+        SubmittableConfig.class
+})
 public class ProgressMonitorTest {
 
-    @Autowired
-    SubmissionRepository submissionRepository;
+    private String submittableId = "1234-5678";
 
     @Autowired
-    MongoTemplate mongoTemplate;
+    private ProcessingStatusRepository processingStatusRepository;
 
-    @Before //This runs before each test
-    public void setUp() {
-        mongoTemplate.getCollection("submission").drop();
-        submissionRepository.save(Helpers.generateTestSubmission());
+    @Autowired
+    private ProgressMonitorService progressMonitorService;
+
+    @Before
+    public void setUp() throws Exception {
+        ProcessingStatus ps = Helpers.generateProcessingStatus(submittableId, ProcessingStatusEnum.Processing);
+        processingStatusRepository.insert(ps);
     }
 
     @Test
-    public void testSaveSubmission() {
-        submissionRepository.save(Helpers.generateTestSubmission());
+    public void updateSubmittablesFromCertificatesTest() {
+        ProcessingCertificate pc = Helpers.generateProcessingCertificate(submittableId, ProcessingStatusEnum.Submitted);
+        ProcessingCertificateEnvelope pce = Helpers.generateProcessingCertificateEnvelope(Arrays.asList(pc));
+
+        progressMonitorService.updateSubmittablesFromCertificates(pce);
+
+        assertThat(
+                processingStatusRepository.findBySubmittableId(submittableId).getStatus(), equalTo(ProcessingStatusEnum.Submitted.name())
+        );
+
+        assertThat(
+                processingStatusRepository.findBySubmittableId(submittableId).getAccession(), equalTo("SAMEA12345")
+        );
     }
 
-    @Test
-    public void getSubmissionById() {
-        try {
-            Submission sub1 = submissionRepository.findAll(new PageRequest(0,100)).getContent().get(0);
-
-            Submission sub2 = submissionRepository.findOne(sub1.getId());
-
-            Assert.assertEquals(sub1, sub2);
-
-        } catch (IndexOutOfBoundsException e) {
-            e.printStackTrace();
-            Assert.fail("No submissions found.");
-        }
-    }
-
-    @Test
-    public void getSubmissionByTeamName() {
-        try {
-            Submission sub1 = submissionRepository.findAll(new PageRequest(0,100)).getContent().get(0);
-            List<Submission> submissionList = submissionRepository.findByTeamName("subs-test", new PageRequest(0,100)).getContent();
-
-            Assert.assertTrue(submissionList.contains(sub1));
-
-        } catch (IndexOutOfBoundsException e) {
-            e.printStackTrace();
-            Assert.fail("No submissions found.");
-        }
+    @After
+    public void tearDown() throws Exception {
+        processingStatusRepository.deleteAll();
     }
 }
