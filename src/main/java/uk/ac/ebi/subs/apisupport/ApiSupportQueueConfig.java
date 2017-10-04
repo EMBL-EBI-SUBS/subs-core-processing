@@ -15,7 +15,7 @@ public class ApiSupportQueueConfig {
      * Queue for cleaning up contents of a submission if the user deletes it
      */
     @Bean
-    Queue onDeleteCleanupSubmissionContentsQueue(){return new Queue(Queues.SUBMISSION_DELETED_CLEANUP_CONTENTS,true);}
+    Queue onDeleteCleanupSubmissionContentsQueue(){return Queues.buildQueueWithDlx(Queues.SUBMISSION_DELETED_CLEANUP_CONTENTS);}
 
     @Bean
     Binding onDeleteCleanupSubmissionContentsBinding(Queue onDeleteCleanupSubmissionContentsQueue, TopicExchange submissionExchange) {
@@ -26,7 +26,7 @@ public class ApiSupportQueueConfig {
      * Queue for documents within a submission to have their status updated owhen the user submits the submission
      * @return
      */
-    @Bean Queue onSubmitMarkSubmittablesQueue() {return new Queue(Queues.SUBMISSION_SUBMITTED_MARK_SUBMITTABLES,true); }
+    @Bean Queue onSubmitMarkSubmittablesQueue() {return Queues.buildQueueWithDlx(Queues.SUBMISSION_SUBMITTED_MARK_SUBMITTABLES); }
 
 
     @Bean
