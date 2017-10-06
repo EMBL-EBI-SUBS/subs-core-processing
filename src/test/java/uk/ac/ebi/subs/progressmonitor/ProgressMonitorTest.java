@@ -1,4 +1,4 @@
-package progressmonitor;
+package uk.ac.ebi.subs.progressmonitor;
 
 import org.junit.After;
 import org.junit.Before;
@@ -7,19 +7,14 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import uk.ac.ebi.subs.ProgressMonitorApp;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
-import uk.ac.ebi.subs.progressmonitor.ProgressMonitorService;
-import uk.ac.ebi.subs.progressmonitor.SubmittablesBulkOperations;
-import uk.ac.ebi.subs.repository.config.SubmittableConfig;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
-import uk.ac.ebi.subs.repository.model.StoredSubmittable;
-import uk.ac.ebi.subs.repository.processing.SupportingSampleRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
-import util.Helpers;
+import uk.ac.ebi.subs.util.Helpers;
 
 import java.util.Arrays;
 
@@ -27,19 +22,8 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@EnableMongoRepositories(basePackageClasses = {
-        ProcessingStatusRepository.class,
-        SubmittablesBulkOperations.class,
-        SupportingSampleRepository.class
-})
 @EnableAutoConfiguration
-@SpringBootTest(classes = {
-        ProgressMonitorService.class,
-        SubmittablesBulkOperations.class,
-        StoredSubmittable.class,
-        StoredSubmittable.class,
-        SubmittableConfig.class
-})
+@SpringBootTest(classes = { ProgressMonitorApp.class } )
 public class ProgressMonitorTest {
 
     private String submittableId = "1234-5678";

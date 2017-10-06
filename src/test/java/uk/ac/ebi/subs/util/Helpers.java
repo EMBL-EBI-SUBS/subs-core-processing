@@ -1,4 +1,4 @@
-package util;
+package uk.ac.ebi.subs.util;
 
 
 import uk.ac.ebi.subs.data.component.Archive;
