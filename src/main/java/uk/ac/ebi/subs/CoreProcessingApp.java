@@ -5,9 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.system.ApplicationPidFileWriter;
 
 @SpringBootApplication
-public class ApiSupportApplication {
+public class CoreProcessingApp {
+
     public static void main(String[] args) {
-        SpringApplication springApplication = new SpringApplication( ApiSupportApplication.class);
+        SpringApplication springApplication = new SpringApplication( CoreProcessingApp.class);
         ApplicationPidFileWriter applicationPidFileWriter = new ApplicationPidFileWriter();
         springApplication.addListeners( applicationPidFileWriter );
         springApplication.run(args);

@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import uk.ac.ebi.subs.DispatcherApplication;
+import uk.ac.ebi.subs.CoreProcessingApp;
 import uk.ac.ebi.subs.data.component.*;
 import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Category(MongoDBDependentTest.class)
-@SpringBootTest(classes = DispatcherApplication.class)
+@SpringBootTest(classes = CoreProcessingApp.class)
 public class SupportingInformationTest {
 
 

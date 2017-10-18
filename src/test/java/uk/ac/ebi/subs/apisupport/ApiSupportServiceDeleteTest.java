@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit4.SpringRunner;
-import uk.ac.ebi.subs.ApiSupportApplication;
+import uk.ac.ebi.subs.CoreProcessingApp;
 import uk.ac.ebi.subs.apisupport.utils.MongoDBDependentTest;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
 import uk.ac.ebi.subs.repository.model.Sample;
@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = ApiSupportApplication.class)
+@SpringBootTest(classes = CoreProcessingApp.class)
 @Category(MongoDBDependentTest.class)
 public class ApiSupportServiceDeleteTest {
 

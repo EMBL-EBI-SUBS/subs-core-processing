@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import uk.ac.ebi.subs.ProgressMonitorApp;
+import uk.ac.ebi.subs.CoreProcessingApp;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
@@ -23,7 +23,7 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @EnableAutoConfiguration
-@SpringBootTest(classes = { ProgressMonitorApp.class } )
+@SpringBootTest(classes = { CoreProcessingApp.class } )
 public class ProgressMonitorTest {
 
     private String submittableId = "1234-5678";

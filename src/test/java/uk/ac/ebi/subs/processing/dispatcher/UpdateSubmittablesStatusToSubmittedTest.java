@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.StopWatch;
-import uk.ac.ebi.subs.DispatcherApplication;
+import uk.ac.ebi.subs.CoreProcessingApp;
 import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.data.component.Team;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertThat;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @Category(MongoDBDependentTest.class)
-@SpringBootTest(classes = DispatcherApplication.class)
+@SpringBootTest(classes = CoreProcessingApp.class)
 public class UpdateSubmittablesStatusToSubmittedTest {
 
     @Autowired
