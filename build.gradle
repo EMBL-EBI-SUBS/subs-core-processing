@@ -7,7 +7,7 @@ apply plugin: 'maven'
 apply plugin: 'application'
 apply plugin: 'org.hidetake.ssh'
 
-mainClassName = "uk.ac.ebi.subs.DispatcherApplication"
+mainClassName = "uk.ac.ebi.subs.CoreProcessingApp"
 
 buildscript {
     repositories {
