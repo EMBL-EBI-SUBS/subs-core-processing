@@ -28,16 +28,20 @@ repositories {
 
 dependencies {
     compile("uk.ac.ebi.subs:subs-processing-model:0.1.1-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-repository:0.2.0-SNAPSHOT")
-
+    compile("uk.ac.ebi.subs:subs-repository:0.1.2-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-data-model:0.1.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:0.3.0-SNAPSHOT")
+    compile("uk.ac.ebi.subs:validator-common:0.5.0-SNAPSHOT")
+
+    compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
+
+    compile("org.springframework.boot:spring-boot-starter-data-mongodb")
 
     testCompile("junit:junit")
     testCompile("org.springframework.boot:spring-boot-starter-test")
-}
 
-ext.gradle_env = hasProperty('env') ? env : 'dev'
+    compile 'org.springframework.security:spring-security-core'
+}
 
 task sourceJar(type: Jar) { from sourceSets.main.allJava }
 
