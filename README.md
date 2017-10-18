@@ -1,4 +1,4 @@
-# Submission API
+# Subs Core Processing 
 [![Build Status](https://travis-ci.org/EMBL-EBI-SUBS/subs-dispatcher-support.svg?branch=master)](https://travis-ci.org/EMBL-EBI-SUBS/subs-dispatcher-support)
 
 ## License
