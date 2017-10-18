@@ -37,6 +37,8 @@ dependencies {
     testCompile("org.springframework.boot:spring-boot-starter-test")
 }
 
+ext.gradle_env = hasProperty('env') ? env : 'dev'
+
 task sourceJar(type: Jar) { from sourceSets.main.allJava }
 
 artifacts {
