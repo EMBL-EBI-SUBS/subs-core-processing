@@ -140,11 +140,15 @@ ext.gradle_env = hasProperty('env') ? env : 'dev'
 remotes {
     submission_dev {
         role('dev')
-        host = 'mac-subs-001'
+        host = 'mac-subs-002'
     }
     submission_test {
         role('test')
-        host = 'mac-subs-002'
+        host = 'mac-subs-004'
+    }
+    submission_prod {
+        role('prod')
+        host = 'mac-subs-005'
     }
 }
 
