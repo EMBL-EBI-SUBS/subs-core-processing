@@ -15,9 +15,11 @@ node {
         sh 'cat GIT_BRANCH'
         git_branch = readFile('GIT_BRANCH').trim()
         if (git_branch == 'remotes/origin/dev') {
-            sh "gradlew -Penv=dev deployJar"
+            sh "gradlew --gradle-user-home=/homes/sub_adm/secrets -PsshKeyFile=/var/lib/jenkins/.ssh/id_rsa -Penv=dev deployJar"
         } else if (git_branch == 'remotes/origin/dev') {
-            sh "gradlew -Penv=test deployJar"
+            sh "gradlew --gradle-user-home=/homes/sub_adm/secrets -PsshKeyFile=/var/lib/jenkins/.ssh/id_rsa -Penv=test deployJar"
+        } else {
+            sh "gradlew --gradle-user-home=/homes/sub_adm/secrets -PsshKeyFile=/var/lib/jenkins/.ssh/id_rsa -Penv=prod deployJar"
         }
     }
 }
