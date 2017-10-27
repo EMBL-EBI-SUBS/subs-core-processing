@@ -1,16 +1,22 @@
 node {
     stage('Preparation') { // for display purposes
+        // Get some code from a GitHub repository
         checkout scm
-        gradleHome = tool 'gradle-3'
+        //gradleHome = tool 'gradle-3'
     }
     stage('Build') {
         // Run the gradle assemble
-        sh "gradlew assemble"
+        echo 'Building'
+        sh "./gradlew assemble"
     }
     stage('Deploy') {
-        if (env.BRANCH_NAME == 'dev') {
+        sh 'echo branch $BRANCH_NAME'
+        sh 'git name-rev --name-only HEAD > GIT_BRANCH'
+        sh 'cat GIT_BRANCH'
+        git_branch = readFile('GIT_BRANCH').trim()
+        if (git_branch == 'remotes/origin/dev') {
             sh "gradlew -Penv=dev deployJar"
-        } else if (env.BRANCH_NAME == 'master') {
+        } else if (git_branch == 'remotes/origin/dev') {
             sh "gradlew -Penv=test deployJar"
         }
     }
