@@ -2,6 +2,7 @@ group 'uk.ac.ebi.subs'
 version '0.1-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'groovy'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'maven'
 apply plugin: 'application'
@@ -36,6 +37,8 @@ dependencies {
     compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
 
     compile("org.springframework.boot:spring-boot-starter-data-mongodb")
+
+    compile 'org.codehaus.groovy:groovy-all:2.4.10'
 
     testCompile("junit:junit")
     testCompile("org.springframework.boot:spring-boot-starter-test")
@@ -137,14 +140,22 @@ task printJarFullPath {
 
 ext.gradle_env = hasProperty('env') ? env : 'dev'
 
+def devDeployHostName = hasProperty(project.name + "DevDeployTarget") ? getProperty(project.name + "DevDeployTarget") : 'localhost'
+def testDeployHostName = hasProperty(project.name + "TestDeployTarget") ? getProperty(project.name + "TestDeployTarget") : 'localhost'
+def prodDeployHostName = hasProperty(project.name + "ProdDeployTarget") ? getProperty(project.name + "ProdDeployTarget") : 'localhost'
+
 remotes {
     submission_dev {
         role('dev')
-        host = 'mac-subs-001'
+        host = devDeployHostName
     }
     submission_test {
         role('test')
-        host = 'mac-subs-002'
+        host = testDeployHostName
+    }
+    submission_prod {
+        role('prod')
+        host = prodDeployHostName
     }
 }
 
