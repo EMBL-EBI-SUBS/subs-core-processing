@@ -16,7 +16,7 @@ node {
         git_branch = readFile('GIT_BRANCH').trim()
         if (git_branch == 'remotes/origin/dev') {
             sh "./gradlew --gradle-user-home=/homes/sub_adm/secrets -PsshKeyFile=/var/lib/jenkins/.ssh/id_rsa -Penv=dev deployJar"
-        } else if (git_branch == 'remotes/origin/dev') {
+        } else if (git_branch == 'remotes/origin/master') {
             sh "./gradlew --gradle-user-home=/homes/sub_adm/secrets -PsshKeyFile=/var/lib/jenkins/.ssh/id_rsa -Penv=test deployJar"
         }
     }
