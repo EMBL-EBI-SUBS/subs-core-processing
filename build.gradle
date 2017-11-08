@@ -1,5 +1,5 @@
 group 'uk.ac.ebi.subs'
-version '0.2.0-SNAPSHOT'
+version '0.2.1-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'groovy'
@@ -29,7 +29,7 @@ repositories {
 
 dependencies {
     compile("uk.ac.ebi.subs:subs-processing-model:0.2.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-repository:0.4.0-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-repository:0.4.1-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-data-model:0.3.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:0.4.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:validator-common:0.7.0-SNAPSHOT")
