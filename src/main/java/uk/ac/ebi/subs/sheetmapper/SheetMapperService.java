@@ -76,8 +76,7 @@ public class SheetMapperService {
                         //create new record
                         if (e.getRawStatusCode() == HttpStatus.NOT_FOUND.value()){
                             URI createUri = createUriTemplate.expand(expansionParams);
-                            URI location = restTemplate.postForLocation(createUri, json.toString());
-                            System.out.println(location);
+                            restTemplate.postForLocation(createUri, json.toString());
                         }
                         else {
                             //actual error
