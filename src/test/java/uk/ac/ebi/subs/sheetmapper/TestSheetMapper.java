@@ -27,6 +27,7 @@ import uk.ac.ebi.subs.repository.model.templates.Template;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +50,7 @@ public class TestSheetMapper {
 
     @Before
     public void setUp() {
+        restTemplate.setInterceptors(Collections.emptyList());
         mockServer = MockRestServiceServer.createServer(restTemplate);
     }
 

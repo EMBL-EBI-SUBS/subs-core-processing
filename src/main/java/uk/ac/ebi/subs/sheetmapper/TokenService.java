@@ -25,7 +25,7 @@ public class TokenService {
     private static final int TOKEN_LIFETIME_IN_SECONDS = 60 * 60;
 
 
-    @Value("${aap.authUrl}")
+    @Value("${aap.domains.url}/auth")
     private String authUrl;
 
     @Value("${usi.tokenservice.username}")
