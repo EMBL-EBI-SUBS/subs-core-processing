@@ -8,6 +8,7 @@ import org.springframework.hateoas.UriTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.subs.repository.model.sheets.Row;
@@ -35,6 +36,13 @@ public class SheetMapperService {
     private final RestTemplate restTemplate;
 
     public void mapSheet(Sheet sheet) {
+        Assert.notNull(sheet);
+        Assert.notNull(sheet.getTemplate());
+        Assert.notNull(sheet.getSubmission());
+        Assert.notNull(sheet.getRows());
+        Assert.notNull(sheet.getMappings());
+
+
         UriTemplate submissionUriTemplate  = new UriTemplate(rootApiUrl + "/submissions/{submissionId}");
         UriTemplate searchUriTemplate  = new UriTemplate(rootApiUrl + "/{type}/search/by-submissionId-and-alias{?submissionId,alias,projection}");
         UriTemplate createUriTemplate  = new UriTemplate(rootApiUrl + "/submissions/{submissionId}/contents/{type}");
