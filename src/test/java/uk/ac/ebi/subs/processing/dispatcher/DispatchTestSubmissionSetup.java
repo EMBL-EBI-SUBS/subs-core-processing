@@ -59,7 +59,7 @@ public class DispatchTestSubmissionSetup {
         s.setSubmission(submission);
         submittableHelperService.setupNewSubmittable(s);
         setArchive(s,Archive.BioSamples);
-        sampleRepository.insert(s);
+        sampleRepository.save(s);
         return s;
     }
 
@@ -70,7 +70,7 @@ public class DispatchTestSubmissionSetup {
         s.setProjectRef(null);
         submittableHelperService.setupNewSubmittable(s);
         setArchive(s,Archive.Ena);
-        studyRepository.insert(s);
+        studyRepository.save(s);
         return s;
     }
 
@@ -84,7 +84,7 @@ public class DispatchTestSubmissionSetup {
         a.setStudyRef((StudyRef) study.asRef());
         a.getSampleUses().add(new SampleUse((SampleRef) sample.asRef()));
 
-        assayRepository.insert(a);
+        assayRepository.save(a);
         return a;
     }
 

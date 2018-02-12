@@ -76,14 +76,14 @@ public class SubmissionEnvelopeServiceTest {
         study.setSubmission(submission);
         study.setAlias("study");
         submittableHelperService.setupNewSubmittable(study);
-        studyRepository.insert(study);
+        studyRepository.save(study);
 
 
         sample = new Sample();
         sample.setSubmission(submission);
         sample.setAlias("sample");
         submittableHelperService.setupNewSubmittable(sample);
-        sampleRepository.insert(sample);
+        sampleRepository.save(sample);
     }
 
     @After

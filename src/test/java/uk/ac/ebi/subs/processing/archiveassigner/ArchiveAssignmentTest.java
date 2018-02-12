@@ -85,8 +85,9 @@ public class ArchiveAssignmentTest {
         Sample s = new Sample();
         s.setAlias(alias);
         s.setSubmission(submission);
-        submittableHelperService.setupNewSubmittable(s);
-        sampleRepository.insert(s);
+        submittableHelperService.uuidAndTeamFromSubmissionSetUp(s);
+        submittableHelperService.processingStatusAndValidationResultSetUp(s);
+        sampleRepository.save(s);
         return s;
     }
 
@@ -96,8 +97,9 @@ public class ArchiveAssignmentTest {
         s.setSubmission(submission);
         s.setProjectRef(null);
         s.setStudyType(studyDataType);
-        submittableHelperService.setupNewSubmittable(s);
-        studyRepository.insert(s);
+        submittableHelperService.uuidAndTeamFromSubmissionSetUp(s);
+        submittableHelperService.processingStatusAndValidationResultSetUp(s);
+        studyRepository.save(s);
         return s;
     }
 
@@ -106,10 +108,11 @@ public class ArchiveAssignmentTest {
         a.setAlias(alias);
         a.setSubmission(submission);
 
-        submittableHelperService.setupNewSubmittable(a);
+        submittableHelperService.uuidAndTeamFromSubmissionSetUp(a);
+        submittableHelperService.processingStatusAndValidationResultSetUp(a);
         a.setStudyRef((StudyRef) study.asRef());
 
-        assayRepository.insert(a);
+        assayRepository.save(a);
         return a;
 
     }
@@ -119,9 +122,10 @@ public class ArchiveAssignmentTest {
         project.setAlias(alias);
         project.setSubmission(submission);
 
-        submittableHelperService.setupNewSubmittable(project);
+        submittableHelperService.uuidAndTeamFromSubmissionSetUp(project);
+        submittableHelperService.processingStatusAndValidationResultSetUp(project);
 
-        projectRepository.insert(project);
+        projectRepository.save(project);
         return project;
     }
 
