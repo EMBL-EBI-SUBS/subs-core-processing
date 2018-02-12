@@ -29,7 +29,8 @@ public class SubmissionArchiveAssignmentService {
     public void assignArchives(Submission submission) {
         logger.info("assigning archives for submission {}", submission);
 
-        submissionEnvelopeService.submissionContents(submission.getId()).forEach(storedSubmittable -> {
+        submissionEnvelopeService.submissionContents(submission.getId())
+                .forEach(storedSubmittable -> {
             Archive archive = storedSubmittableArchiveAssignmentService.assignArchive(storedSubmittable);
 
 

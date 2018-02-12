@@ -1,9 +1,13 @@
 package uk.ac.ebi.subs.processing.dispatcher;
 
+import groovy.util.logging.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
+import uk.ac.ebi.subs.progressmonitor.ProgressMonitorListener;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.*;
@@ -12,6 +16,8 @@ import java.util.stream.Stream;
 
 @Service
 public class SubmissionEnvelopeService {
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private SubmissionRepository submissionRepository;
     private AnalysisRepository analysisRepository;
@@ -84,6 +90,9 @@ public class SubmissionEnvelopeService {
                 sampleGroupRepository,
                 sampleRepository,
                 studyRepository
-        ).flatMap(repo -> repo.streamBySubmissionId(submissionId));
+        )
+                .filter(r -> r != null)
+                .flatMap(repo -> repo.streamBySubmissionId(submissionId))
+                ;
     }
 }
