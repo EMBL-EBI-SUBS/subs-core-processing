@@ -10,6 +10,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -20,6 +22,8 @@ import java.io.IOException;
 
 @Component
 public class TokenService {
+
+    private static final Logger logger = LoggerFactory.getLogger(TokenService.class);
 
     private static final String TOKEN_CACHE_NAME = "aapJwtToken";
     private static final int TOKEN_LIFETIME_IN_SECONDS = 60 * 60;
@@ -37,11 +41,15 @@ public class TokenService {
     @Cacheable(TOKEN_CACHE_NAME)
     public String aapToken() {
         try {
-            return getJWTToken(
+            logger.info("requesting new aap token");
+            String token = getJWTToken(
                     authUrl,
                     username,
                     password
             );
+            logger.info("new token obtained");
+            return token;
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -63,6 +71,11 @@ public class TokenService {
         HttpResponse response = client.execute(new HttpGet(authUrl));
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+            logger.error(
+                    "Could not get token. Status {} Body {}",
+                    response.getStatusLine().getStatusCode(),
+                    EntityUtils.toString(response.getEntity())
+            );
             throw new CouldNotGetTokenException("ERROR: An error occurred when trying to obtain the AAP token.");
         }
         return EntityUtils.toString(response.getEntity());
