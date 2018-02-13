@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.subs.repository.model.sheets.Row;
 import uk.ac.ebi.subs.repository.model.sheets.Sheet;
 import uk.ac.ebi.subs.repository.model.templates.Capture;
@@ -54,7 +53,7 @@ public class SheetMapperService {
         String targetType = sheet.getTemplate().getTargetType().toLowerCase();
         String submissionId = sheet.getSubmission().getId();
 
-        logger.info("mapping {} for submission {} from sheet {}",targetType,submissionId,sheet.getId());
+        logger.info("mapping {} for submission {} from sheet {}", targetType, submissionId, sheet.getId());
 
         Map<String, String> submissionExpansionParams = new HashMap<>();
         submissionExpansionParams.put("submissionId", submissionId);
@@ -86,7 +85,7 @@ public class SheetMapperService {
                     URI queryUri = searchUriTemplate.expand(expansionParams);
 
                     Map<String, String> headers = postHeaders();
-                    logger.debug("mapping submittable {} {}",targetType, alias);
+                    logger.debug("mapping submittable {} {}", targetType, alias);
                     try {
                         HttpResponse<JsonNode> queryResponse = Unirest.get(queryUri.toString()).headers(headers).asJson();
 
@@ -102,8 +101,7 @@ public class SheetMapperService {
                                     queryResponse.getBody().toString()
                             );
                         }
-                    }
-                    catch (UnirestException e){
+                    } catch (UnirestException e) {
                         throw new RuntimeException(e);
                     }
                 });
