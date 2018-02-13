@@ -2,8 +2,6 @@ package uk.ac.ebi.subs.sheetmapper;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,15 +27,20 @@ public class SheetMapperService {
 
     private static final Logger logger = LoggerFactory.getLogger(SheetMapperService.class);
 
-    public SheetMapperService(TokenService tokenService) {
+    public SheetMapperService(TokenService tokenService, UniRestWrapper uniRestWrapper) {
         this.tokenService = tokenService;
+        this.uniRestWrapper = uniRestWrapper;
     }
 
     @Value("${usi.apiRootUrl}")
     private String rootApiUrl;
 
+    public void setRootApiUrl(String rootApiUrl) {
+        this.rootApiUrl = rootApiUrl;
+    }
 
     private final TokenService tokenService;
+    private final UniRestWrapper uniRestWrapper;
 
     public void mapSheet(Sheet sheet) {
         Assert.notNull(sheet);
@@ -84,72 +87,66 @@ public class SheetMapperService {
 
                     URI queryUri = searchUriTemplate.expand(expansionParams);
 
-                    Map<String, String> headers = postHeaders();
                     logger.debug("mapping submittable {} {}", targetType, alias);
-                    try {
-                        HttpResponse<JsonNode> queryResponse = Unirest.get(queryUri.toString()).headers(headers).asJson();
 
-                        logger.debug("query response code {} {}");
+                    HttpResponse<JsonNode> queryResponse = uniRestWrapper.getJson(queryUri.toString(), requestHeaders());
 
-                        if (HttpStatus.OK.value() == queryResponse.getStatus()) {
-                            updateExistingSubmittable(json, headers, queryResponse);
-                        } else if (HttpStatus.NOT_FOUND.value() == queryResponse.getStatus()) {
-                            createNewSubmittable(createUriTemplate, json, expansionParams);
-                        } else {
-                            throw new HttpClientErrorException(
-                                    HttpStatus.valueOf(queryResponse.getStatus()),
-                                    queryResponse.getBody().toString()
-                            );
-                        }
-                    } catch (UnirestException e) {
-                        throw new RuntimeException(e);
+                    logger.debug("query response code {} {}");
+
+                    if (HttpStatus.OK.value() == queryResponse.getStatus()) {
+                        updateExistingSubmittable(json, queryResponse);
+                    } else if (HttpStatus.NOT_FOUND.value() == queryResponse.getStatus()) {
+                        createNewSubmittable(createUriTemplate, json, expansionParams);
+                    } else {
+                        throw new HttpClientErrorException(
+                                HttpStatus.valueOf(queryResponse.getStatus()),
+                                queryResponse.getBody().toString()
+                        );
                     }
+
                 });
     }
 
-    private void createNewSubmittable(UriTemplate createUriTemplate, JSONObject json, Map<String, String> expansionParams) throws UnirestException {
+    private void createNewSubmittable(UriTemplate createUriTemplate, JSONObject json, Map<String, String> expansionParams) {
         URI createUri = createUriTemplate.expand(expansionParams);
 
         String requestBodyJson = json.toString();
 
-        HttpResponse<String> response = Unirest.post(createUri.toString())
-                .headers(postHeaders())
-                .body(requestBodyJson)
-                .asString();
+        HttpResponse<JsonNode> response = uniRestWrapper.postJson(
+                createUri.toString(),
+                requestHeaders(),
+                json
+        );
 
         if (response.getStatus() > 201) {
             throw new HttpClientErrorException(
                     HttpStatus.valueOf(response.getStatus()),
-                    response.getBody()
+                    response.getBody().toString()
             );
         }
     }
 
-    private void updateExistingSubmittable(JSONObject json, Map<String, String> headers, HttpResponse<JsonNode> queryResponse) {
+    private void updateExistingSubmittable(JSONObject json, HttpResponse<JsonNode> queryResponse) {
         JSONObject linksObject = queryResponse.getBody().getObject().getJSONObject("_links");
 
         String selfURI = linksObject.getJSONObject("self").getString("href");
 
         String requestBodyJson = json.toString();
-        try {
-            HttpResponse<String> response = Unirest.put(selfURI)
-                    .headers(postHeaders())
-                    .body(requestBodyJson)
-                    .asString();
 
-            if (response.getStatus() > 201) {
-                throw new HttpClientErrorException(
-                        HttpStatus.valueOf(response.getStatus()),
-                        response.getBody()
-                );
-            }
-        } catch (UnirestException e1) {
-            throw new RuntimeException(e1);
+        HttpResponse<JsonNode> response = uniRestWrapper.putJson(
+                selfURI, requestHeaders(), json
+        );
+
+        if (response.getStatus() > 201) {
+            throw new HttpClientErrorException(
+                    HttpStatus.valueOf(response.getStatus()),
+                    response.getBody().toString()
+            );
         }
-        Unirest.put(selfURI.toString()).headers(headers).body(json.toString());
+
     }
 
-    private Map<String, String> postHeaders() {
+    private Map<String, String> requestHeaders() {
         Map<String, String> headers = new HashMap<>();
         headers.put("Authorization", "Bearer " + tokenService.aapToken());
         headers.put("Content-Type", "application/json");
