@@ -1,12 +1,15 @@
 package uk.ac.ebi.subs.sheetmapper;
 
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.web.JsonPath;
-import org.springframework.hateoas.Link;
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.web.client.HttpClientErrorException;
@@ -25,15 +28,17 @@ import java.util.stream.Stream;
 @Service
 public class SheetMapperService {
 
+    private static final Logger logger = LoggerFactory.getLogger(SheetMapperService.class);
 
-    public SheetMapperService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    public SheetMapperService(TokenService tokenService) {
+        this.tokenService = tokenService;
     }
 
     @Value("${usi.apiRootUrl}")
     private String rootApiUrl;
 
-    private final RestTemplate restTemplate;
+
+    private final TokenService tokenService;
 
     public void mapSheet(Sheet sheet) {
         Assert.notNull(sheet);
@@ -42,19 +47,30 @@ public class SheetMapperService {
         Assert.notNull(sheet.getRows());
         Assert.notNull(sheet.getMappings());
 
-
-        UriTemplate submissionUriTemplate  = new UriTemplate(rootApiUrl + "/submissions/{submissionId}");
-        UriTemplate searchUriTemplate  = new UriTemplate(rootApiUrl + "/{type}/search/by-submissionId-and-alias{?submissionId,alias,projection}");
-        UriTemplate createUriTemplate  = new UriTemplate(rootApiUrl + "/submissions/{submissionId}/contents/{type}");
+        UriTemplate submissionUriTemplate = new UriTemplate(rootApiUrl + "/submissions/{submissionId}");
+        UriTemplate searchUriTemplate = new UriTemplate(rootApiUrl + "/{type}/search/by-submissionId-and-alias{?submissionId,alias,projection}");
+        UriTemplate createUriTemplate = new UriTemplate(rootApiUrl + "/submissions/{submissionId}/contents/{type}");
 
         String targetType = sheet.getTemplate().getTargetType().toLowerCase();
         String submissionId = sheet.getSubmission().getId();
+
+        logger.info("mapping {} for submission {} from sheet {}",targetType,submissionId,sheet.getId());
 
         Map<String, String> submissionExpansionParams = new HashMap<>();
         submissionExpansionParams.put("submissionId", submissionId);
 
         URI submissionUri = submissionUriTemplate.expand(submissionExpansionParams);
 
+        try {
+            submitByHttp(sheet, searchUriTemplate, createUriTemplate, targetType, submissionId, submissionUri);
+        } catch (HttpClientErrorException e) {
+            logger.error("HttpClientErrorException {} {}", e.getRawStatusCode(), e.getResponseBodyAsString());
+            throw e;
+        }
+
+    }
+
+    private void submitByHttp(Sheet sheet, UriTemplate searchUriTemplate, UriTemplate createUriTemplate, String targetType, String submissionId, URI submissionUri) {
         buildSubmittableJson(sheet, submissionUri)
                 .filter(json -> json.has("alias"))
                 .filter(json -> json.getString("alias") != null && !json.getString("alias").isEmpty())
@@ -69,37 +85,78 @@ public class SheetMapperService {
 
                     URI queryUri = searchUriTemplate.expand(expansionParams);
 
+                    Map<String, String> headers = postHeaders();
+                    logger.debug("mapping submittable {} {}",targetType, alias);
                     try {
-                        ResponseEntity<SimpleResource> queryResult = restTemplate.getForEntity(queryUri, SimpleResource.class);
+                        HttpResponse<JsonNode> queryResponse = Unirest.get(queryUri.toString()).headers(headers).asJson();
 
-                        //update to existing record
-                        if (HttpStatus.OK.equals(queryResult.getStatusCode())) {
-                            SimpleResource submittable = queryResult.getBody();
-                            String selfURI = submittable.getLink("self").expand().getHref();
+                        logger.debug("query response code {} {}");
 
-                            restTemplate.put(selfURI,json.toString());
+                        if (HttpStatus.OK.value() == queryResponse.getStatus()) {
+                            updateExistingSubmittable(json, headers, queryResponse);
+                        } else if (HttpStatus.NOT_FOUND.value() == queryResponse.getStatus()) {
+                            createNewSubmittable(createUriTemplate, json, expansionParams);
+                        } else {
+                            throw new HttpClientErrorException(
+                                    HttpStatus.valueOf(queryResponse.getStatus()),
+                                    queryResponse.getBody().toString()
+                            );
                         }
                     }
-                    catch(HttpClientErrorException e){
-                        //create new record
-                        if (e.getRawStatusCode() == HttpStatus.NOT_FOUND.value()){
-                            URI createUri = createUriTemplate.expand(expansionParams);
-                            restTemplate.postForLocation(createUri, json.toString());
-                        }
-                        else {
-                            //actual error
-                            throw e;
-                        }
+                    catch (UnirestException e){
+                        throw new RuntimeException(e);
                     }
-
-
-
-                    //TODO error handling
-
-
                 });
+    }
 
+    private void createNewSubmittable(UriTemplate createUriTemplate, JSONObject json, Map<String, String> expansionParams) throws UnirestException {
+        URI createUri = createUriTemplate.expand(expansionParams);
 
+        String requestBodyJson = json.toString();
+
+        HttpResponse<String> response = Unirest.post(createUri.toString())
+                .headers(postHeaders())
+                .body(requestBodyJson)
+                .asString();
+
+        if (response.getStatus() > 201) {
+            throw new HttpClientErrorException(
+                    HttpStatus.valueOf(response.getStatus()),
+                    response.getBody()
+            );
+        }
+    }
+
+    private void updateExistingSubmittable(JSONObject json, Map<String, String> headers, HttpResponse<JsonNode> queryResponse) {
+        JSONObject linksObject = queryResponse.getBody().getObject().getJSONObject("_links");
+
+        String selfURI = linksObject.getJSONObject("self").getString("href");
+
+        String requestBodyJson = json.toString();
+        try {
+            HttpResponse<String> response = Unirest.put(selfURI)
+                    .headers(postHeaders())
+                    .body(requestBodyJson)
+                    .asString();
+
+            if (response.getStatus() > 201) {
+                throw new HttpClientErrorException(
+                        HttpStatus.valueOf(response.getStatus()),
+                        response.getBody()
+                );
+            }
+        } catch (UnirestException e1) {
+            throw new RuntimeException(e1);
+        }
+        Unirest.put(selfURI.toString()).headers(headers).body(json.toString());
+    }
+
+    private Map<String, String> postHeaders() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Authorization", "Bearer " + tokenService.aapToken());
+        headers.put("Content-Type", "application/json");
+        headers.put("Accept", "application/hal+json");
+        return headers;
     }
 
     public Stream<JSONObject> buildSubmittableJson(Sheet sheet, URI submissionUrl) {
