@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.net.URI;
@@ -37,10 +38,6 @@ public class TokenService {
 
     private static final Logger logger = LoggerFactory.getLogger(TokenService.class);
 
-    public TokenService(RestOperations restOperations) {
-        this.restOperations = restOperations;
-    }
-
     @Value("${aap.domains.url}/auth")
     private String aapUri;
 
@@ -51,7 +48,7 @@ public class TokenService {
     private String password;
     private Logger log = LoggerFactory.getLogger(getClass());
 
-    private final RestOperations restOperations;
+    private final RestOperations restOperations = new RestTemplate();
 
     private Optional<String> jwt = Optional.empty();
     private Optional<Date> expiry = Optional.empty();
