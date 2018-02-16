@@ -1,5 +1,8 @@
 package uk.ac.ebi.subs.sheetmapper;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
@@ -15,70 +18,97 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.util.Base64;
+import java.util.Date;
+import java.util.Optional;
 
 @Component
 public class TokenService {
 
     private static final Logger logger = LoggerFactory.getLogger(TokenService.class);
 
-    private static final String TOKEN_CACHE_NAME = "aapJwtToken";
-    private static final int TOKEN_LIFETIME_IN_SECONDS = 60 * 60;
-
-
     @Value("${aap.domains.url}/auth")
-    private String authUrl;
+    private String aapUri;
 
     @Value("${usi.tokenservice.username}")
     private String username;
 
     @Value("${usi.tokenservice.password}")
     private String password;
+    private Logger log = LoggerFactory.getLogger(getClass());
 
-    @Cacheable(TOKEN_CACHE_NAME)
-    public String aapToken() {
-        try {
-            logger.info("requesting new aap token");
-            String token = getJWTToken(
-                    authUrl,
-                    username,
-                    password
-            );
-            logger.info("new token obtained");
-            return token;
+    private final RestOperations restOperations = new RestTemplate();
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    private Optional<String> jwt = Optional.empty();
+    private Optional<Date> expiry = Optional.empty();
+
+    public synchronized String aapToken() {
+        log.debug("JWT requested");
+        if (username == null || username.trim().length() == 0
+                || password == null || password.trim().length() == 0) {
+            return null;
         }
+
+        if (isFreshTokenRequired()) {
+            log.debug("Fetching fresh JWT");
+
+            String auth = username + ":" + password;
+            byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(Charset.forName("US-ASCII")) );
+            String authHeader = "Basic " + new String( encodedAuth );
+
+            RequestEntity<?> request = RequestEntity.get(URI.create(aapUri))
+                    .header(HttpHeaders.AUTHORIZATION, authHeader)
+                    .build();
+
+            ResponseEntity<String> response = restOperations.exchange(request, String.class);
+
+            jwt = Optional.of(response.getBody());
+
+            try {
+                DecodedJWT decodedJwt = JWT.decode(jwt.get());
+                Optional<Date> tokenExpiry = Optional.of(decodedJwt.getExpiresAt());
+
+                expiry = shortenTokenLifetime(tokenExpiry);
+
+            } catch (JWTDecodeException e){
+                //Invalid token
+                throw new RuntimeException(e);
+            }
+
+            log.debug("Fresh JWT obtained, expires {}, {}",expiry,jwt);
+        }
+
+        return jwt.get();
     }
 
-    @CacheEvict(allEntries = true, cacheNames = TOKEN_CACHE_NAME)
-    @Scheduled(fixedDelay = TOKEN_LIFETIME_IN_SECONDS - 60)
-    public void cacheEvict() {
-        //empty method clears the cache
+    private Optional<Date> shortenTokenLifetime(Optional<Date> tokenExpiry) {
+        if (!tokenExpiry.isPresent()){
+            return tokenExpiry;
+        }
 
+        Date expiryTime = tokenExpiry.get();
+        Date fiveMinutesEarlier = new Date( expiryTime.getTime() - FIVE_MINS_IN_MILLIS);
+
+        return Optional.of(fiveMinutesEarlier);
     }
 
-    public static String getJWTToken(String authUrl, String username, String password) throws IOException {
-        CredentialsProvider provider = new BasicCredentialsProvider();
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
-        provider.setCredentials(AuthScope.ANY, credentials);
+    private static final long FIVE_MINS_IN_MILLIS = 5 * 60 * 1000;
 
-        HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-        HttpResponse response = client.execute(new HttpGet(authUrl));
 
-        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-            logger.error(
-                    "Could not get token. Status {} Body {}",
-                    response.getStatusLine().getStatusCode(),
-                    EntityUtils.toString(response.getEntity())
-            );
-            throw new CouldNotGetTokenException("ERROR: An error occurred when trying to obtain the AAP token.");
-        }
-        return EntityUtils.toString(response.getEntity());
+    private boolean isFreshTokenRequired() {
+        Date now = new Date();
+        return !jwt.isPresent() || (expiry.isPresent() && expiry.get().before(now));
     }
 }
 

@@ -135,25 +135,43 @@ public class TestSheetMapper {
 
 
     private Sheet sheet(Submission submission) {
-        Template template = template();
-        Map<String, Capture> columnCaptures = template.getColumnCaptures();
         Sheet sheet = new Sheet();
 
         sheet.setSubmission(submission);
-        sheet.setTemplate(template);
+        sheet.setTemplate(template());
 
         sheet.addRow(new String[]{"alias", "taxon id", "taxon", "height", "units"});
         sheet.addRow(new String[]{"s1", "9606", "Homo sapiens", "1.7", "meters"});
         sheet.addRow(new String[]{"s2", "9606", "Homo sapiens", "1.7", "meters"});
 
-        List<Capture> captures = Arrays.asList(
-                columnCaptures.get("alias"),
-                columnCaptures.get("taxon id"),
-                columnCaptures.get("taxon"),
-                template.getDefaultCapture().copy()
-        );
-        sheet.setMappings(captures);
-        sheet.setHeaderRowIndex(0);
+        sheet.getRows().get(1).setDocument("{\n" +
+                "  \"alias\": \"s1\",\n" +
+                "  \"taxon\": \"Homo sapiens\",\n" +
+                "  \"taxonId\": 9606,\n" +
+                "  \"attributes\": {\n" +
+                "    \"height\": [\n" +
+                "      {\n" +
+                "        \"value\": \"1.7\",\n" +
+                "        \"units\": \"meters\"\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "}")
+        ;
+        sheet.getRows().get(2).setDocument("{\n" +
+                "  \"alias\": \"s2\",\n" +
+                "  \"taxon\": \"Homo sapiens\",\n" +
+                "  \"taxonId\": 9606,\n" +
+                "  \"attributes\": {\n" +
+                "    \"height\": [\n" +
+                "      {\n" +
+                "        \"value\": \"1.7\",\n" +
+                "        \"units\": \"meters\"\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "}")
+        ;
         sheet.setStatus(SheetStatusEnum.Submitted);
 
         return sheet;

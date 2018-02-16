@@ -11,14 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.web.client.HttpClientErrorException;
-import uk.ac.ebi.subs.repository.model.sheets.Row;
 import uk.ac.ebi.subs.repository.model.sheets.Sheet;
-import uk.ac.ebi.subs.repository.model.templates.Capture;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -44,10 +40,8 @@ public class SheetMapperService {
 
     public void mapSheet(Sheet sheet) {
         Assert.notNull(sheet);
-        Assert.notNull(sheet.getTemplate());
         Assert.notNull(sheet.getSubmission());
         Assert.notNull(sheet.getRows());
-        Assert.notNull(sheet.getMappings());
 
         UriTemplate submissionUriTemplate = new UriTemplate(rootApiUrl + "/submissions/{submissionId}");
         UriTemplate searchUriTemplate = new UriTemplate(rootApiUrl + "/{type}/search/by-submissionId-and-alias{?submissionId,alias,projection}");
@@ -155,37 +149,15 @@ public class SheetMapperService {
     }
 
     public Stream<JSONObject> buildSubmittableJson(Sheet sheet, URI submissionUrl) {
-        List<String> headers = sheet.getRows().get(sheet.getHeaderRowIndex()).getCells();
-
-        List<Row> rows = sheet.getRows();
-        List<Row> rowsToParse = rows.subList(sheet.getHeaderRowIndex() + 1, rows.size());
-
-
-        return rowsToParse.stream()
-                .filter(row -> !row.isIgnored())
-                .map(row -> {
-                    JSONObject document = new JSONObject();
-
-                    List<String> cells = row.getCells();
-
-                    ListIterator<Capture> captureIterator = sheet.getMappings().listIterator();
-
-                    while (captureIterator.hasNext()) {
-                        int position = captureIterator.nextIndex();
-                        Capture capture = captureIterator.next();
-
-                        if (capture != null) {
-                            capture.capture(position, headers, cells, document);
-                        }
-                    }
-
-                    return document;
-                })
+        return sheet.getRows().stream()
+                .filter(r -> !r.isIgnored())
+                .filter(r -> r.getDocument() != null)
+                .map(r -> r.getDocument())
+                .map(d -> new JSONObject(d))
                 .map(jsonObject -> {
                     jsonObject.put("submission", submissionUrl.toString());
                     return jsonObject;
                 });
-
     }
 
 }
