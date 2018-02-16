@@ -1,5 +1,6 @@
 package uk.ac.ebi.subs.sheetmapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import org.apache.http.ProtocolVersion;
@@ -22,6 +23,7 @@ import uk.ac.ebi.subs.repository.model.templates.FieldCapture;
 import uk.ac.ebi.subs.repository.model.templates.JsonFieldType;
 import uk.ac.ebi.subs.repository.model.templates.Template;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -144,7 +146,9 @@ public class TestSheetMapper {
         sheet.addRow(new String[]{"s1", "9606", "Homo sapiens", "1.7", "meters"});
         sheet.addRow(new String[]{"s2", "9606", "Homo sapiens", "1.7", "meters"});
 
-        sheet.getRows().get(1).setDocument("{\n" +
+        sheet.getRows().get(1).setDocument(
+                stringToJsonNode(
+                "{\n" +
                 "  \"alias\": \"s1\",\n" +
                 "  \"taxon\": \"Homo sapiens\",\n" +
                 "  \"taxonId\": 9606,\n" +
@@ -156,9 +160,10 @@ public class TestSheetMapper {
                 "      }\n" +
                 "    ]\n" +
                 "  }\n" +
-                "}")
+                "}"))
         ;
-        sheet.getRows().get(2).setDocument("{\n" +
+        sheet.getRows().get(2).setDocument(
+                stringToJsonNode("{\n" +
                 "  \"alias\": \"s2\",\n" +
                 "  \"taxon\": \"Homo sapiens\",\n" +
                 "  \"taxonId\": 9606,\n" +
@@ -170,11 +175,22 @@ public class TestSheetMapper {
                 "      }\n" +
                 "    ]\n" +
                 "  }\n" +
-                "}")
+                "}"))
         ;
         sheet.setStatus(SheetStatusEnum.Submitted);
 
         return sheet;
+    }
+
+    public static com.fasterxml.jackson.databind.JsonNode stringToJsonNode(String jsonContent){
+        ObjectMapper mapper = new ObjectMapper();
+        com.fasterxml.jackson.databind.JsonNode actualObj = null;
+        try {
+            actualObj = mapper.readTree(jsonContent);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return actualObj;
     }
 
     private Template template() {
