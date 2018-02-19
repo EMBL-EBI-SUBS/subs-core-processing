@@ -68,6 +68,7 @@ public class SheetMapperService {
 
     private void submitByHttp(Sheet sheet, UriTemplate searchUriTemplate, UriTemplate createUriTemplate, String targetType, String submissionId, URI submissionUri) {
         buildSubmittableJson(sheet, submissionUri)
+                .parallel()
                 .filter(json -> json.has("alias"))
                 .filter(json -> json.getString("alias") != null && !json.getString("alias").isEmpty())
                 .forEach(json -> {
