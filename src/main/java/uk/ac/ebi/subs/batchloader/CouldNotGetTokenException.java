@@ -1,4 +1,4 @@
-package uk.ac.ebi.subs.sheetmapper;
+package uk.ac.ebi.subs.batchloader;
 
 class CouldNotGetTokenException extends RuntimeException {
     public CouldNotGetTokenException(String message) {

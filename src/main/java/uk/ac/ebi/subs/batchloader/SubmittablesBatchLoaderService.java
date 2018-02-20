@@ -1,4 +1,4 @@
-package uk.ac.ebi.subs.sheetmapper;
+package uk.ac.ebi.subs.batchloader;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.web.client.HttpClientErrorException;
+import uk.ac.ebi.subs.repository.model.SubmittablesBatch;
 import uk.ac.ebi.subs.repository.model.sheets.Sheet;
 
 import java.net.URI;
@@ -19,11 +20,11 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 @Service
-public class SheetMapperService {
+public class SubmittablesBatchLoaderService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SheetMapperService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SubmittablesBatchLoaderService.class);
 
-    public SheetMapperService(TokenService tokenService, UniRestWrapper uniRestWrapper) {
+    public SubmittablesBatchLoaderService(TokenService tokenService, UniRestWrapper uniRestWrapper) {
         this.tokenService = tokenService;
         this.uniRestWrapper = uniRestWrapper;
     }
@@ -38,19 +39,20 @@ public class SheetMapperService {
     private final TokenService tokenService;
     private final UniRestWrapper uniRestWrapper;
 
-    public void mapSheet(Sheet sheet) {
-        Assert.notNull(sheet);
-        Assert.notNull(sheet.getSubmission());
-        Assert.notNull(sheet.getRows());
+    public void loadBatch(SubmittablesBatch batch) {
+        Assert.notNull(batch);
+        Assert.notNull(batch.getSubmission());
+        Assert.notNull(batch.getDocuments());
+        Assert.notNull(batch.getTargetType());
 
         UriTemplate submissionUriTemplate = new UriTemplate(rootApiUrl + "/submissions/{submissionId}");
         UriTemplate searchUriTemplate = new UriTemplate(rootApiUrl + "/{type}/search/by-submissionId-and-alias{?submissionId,alias,projection}");
         UriTemplate createUriTemplate = new UriTemplate(rootApiUrl + "/submissions/{submissionId}/contents/{type}");
 
-        String targetType = sheet.getTemplate().getTargetType().toLowerCase();
-        String submissionId = sheet.getSubmission().getId();
+        String targetType = batch.getTargetType().toLowerCase();
+        String submissionId = batch.getSubmission().getId();
 
-        logger.info("mapping {} for submission {} from sheet {}", targetType, submissionId, sheet.getId());
+        logger.info("mapping {} for submission {} from sheet {}", targetType, submissionId, batch.getId());
 
         Map<String, String> submissionExpansionParams = new HashMap<>();
         submissionExpansionParams.put("submissionId", submissionId);
@@ -58,7 +60,7 @@ public class SheetMapperService {
         URI submissionUri = submissionUriTemplate.expand(submissionExpansionParams);
 
         try {
-            submitByHttp(sheet, searchUriTemplate, createUriTemplate, targetType, submissionId, submissionUri);
+            submitByHttp(batch, searchUriTemplate, createUriTemplate, targetType, submissionId, submissionUri);
         } catch (HttpClientErrorException e) {
             logger.error("HttpClientErrorException {} {}", e.getRawStatusCode(), e.getResponseBodyAsString());
             throw e;
@@ -66,8 +68,8 @@ public class SheetMapperService {
 
     }
 
-    private void submitByHttp(Sheet sheet, UriTemplate searchUriTemplate, UriTemplate createUriTemplate, String targetType, String submissionId, URI submissionUri) {
-        buildSubmittableJson(sheet, submissionUri)
+    private void submitByHttp(SubmittablesBatch batch, UriTemplate searchUriTemplate, UriTemplate createUriTemplate, String targetType, String submissionId, URI submissionUri) {
+        buildSubmittableJson(batch, submissionUri)
                 .parallel()
                 .filter(json -> json.has("alias"))
                 .filter(json -> json.getString("alias") != null && !json.getString("alias").isEmpty())
@@ -149,11 +151,11 @@ public class SheetMapperService {
         return headers;
     }
 
-    public Stream<JSONObject> buildSubmittableJson(Sheet sheet, URI submissionUrl) {
-        return sheet.getRows().stream()
-                .filter(r -> !r.isIgnored())
-                .filter(r -> r.getDocument() != null)
-                .map(r -> r.getDocument())
+    public Stream<JSONObject> buildSubmittableJson(SubmittablesBatch batch, URI submissionUrl) {
+        return batch.getDocuments().stream()
+                .filter(document -> !document.isProcessed())
+                .filter(document -> document.getDocument() != null)
+                .map(document -> document.getDocument())
                 .map(d -> new JSONObject(d))
                 .map(jsonObject -> {
                     jsonObject.put("submission", submissionUrl.toString());

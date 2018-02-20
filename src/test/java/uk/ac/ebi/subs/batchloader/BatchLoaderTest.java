@@ -1,4 +1,4 @@
-package uk.ac.ebi.subs.sheetmapper;
+package uk.ac.ebi.subs.batchloader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.HttpResponse;
@@ -15,19 +15,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
 import uk.ac.ebi.subs.data.component.Team;
 import uk.ac.ebi.subs.repository.model.Submission;
+import uk.ac.ebi.subs.repository.model.SubmittablesBatch;
 import uk.ac.ebi.subs.repository.model.sheets.Sheet;
 import uk.ac.ebi.subs.repository.model.sheets.SheetStatusEnum;
 import uk.ac.ebi.subs.repository.model.templates.AttributeCapture;
-import uk.ac.ebi.subs.repository.model.templates.Capture;
 import uk.ac.ebi.subs.repository.model.templates.FieldCapture;
 import uk.ac.ebi.subs.repository.model.templates.JsonFieldType;
 import uk.ac.ebi.subs.repository.model.templates.Template;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.mockito.BDDMockito.given;
@@ -36,10 +34,10 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
-public class TestSheetMapper {
+public class BatchLoaderTest {
 
 
-    private SheetMapperService sheetMapperService;
+    private SubmittablesBatchLoaderService submittablesBatchLoaderService;
 
     @MockBean
     private UniRestWrapper uniRestWrapper;
@@ -52,13 +50,13 @@ public class TestSheetMapper {
 
     @Before
     public void setUp() {
-        sheetMapperService = new SheetMapperService(tokenService, uniRestWrapper);
-        sheetMapperService.setRootApiUrl("http://localhost:8080/api");
+        submittablesBatchLoaderService = new SubmittablesBatchLoaderService(tokenService, uniRestWrapper);
+        submittablesBatchLoaderService.setRootApiUrl("http://localhost:8080/api");
 
         Submission submission = new Submission();
         submission.setTeam(Team.build("test"));
         submission.setId("1234");
-        this.sheet = sheet(submission);
+        this.batch = batch(submission);
 
         HEADERS.put("Authorization", "Bearer " + TOKEN_PLACEHOLDER);
         HEADERS.put("Content-Type", "application/json");
@@ -68,7 +66,7 @@ public class TestSheetMapper {
         given(tokenService.aapToken()).willReturn(TOKEN_PLACEHOLDER);
     }
 
-    private Sheet sheet;
+    private SubmittablesBatch batch;
 
     private HttpResponse<JsonNode> response(HttpStatus status) {
         return response(status, new JSONObject());
@@ -126,7 +124,7 @@ public class TestSheetMapper {
                 response(HttpStatus.OK)
         );
 
-        sheetMapperService.mapSheet(sheet);
+        submittablesBatchLoaderService.loadBatch(batch);
     }
 
     private Map<String, Object> mapOf(String key, Object value) {
@@ -136,17 +134,16 @@ public class TestSheetMapper {
     }
 
 
-    private Sheet sheet(Submission submission) {
-        Sheet sheet = new Sheet();
+    private SubmittablesBatch batch(Submission submission) {
+        SubmittablesBatch batch = new SubmittablesBatch();
 
-        sheet.setSubmission(submission);
-        sheet.setTemplate(template());
+        batch.setSubmission(submission);
+        batch.setTargetType("samples");
 
-        sheet.addRow(new String[]{"alias", "taxon id", "taxon", "height", "units"});
-        sheet.addRow(new String[]{"s1", "9606", "Homo sapiens", "1.7", "meters"});
-        sheet.addRow(new String[]{"s2", "9606", "Homo sapiens", "1.7", "meters"});
+        batch.addDocument(new SubmittablesBatch.Document());
+        batch.addDocument(new SubmittablesBatch.Document());
 
-        sheet.getRows().get(1).setDocument(
+        batch.getDocuments().get(0).setDocument(
                 stringToJsonNode(
                 "{\n" +
                 "  \"alias\": \"s1\",\n" +
@@ -162,7 +159,7 @@ public class TestSheetMapper {
                 "  }\n" +
                 "}"))
         ;
-        sheet.getRows().get(2).setDocument(
+        batch.getDocuments().get(1).setDocument(
                 stringToJsonNode("{\n" +
                 "  \"alias\": \"s2\",\n" +
                 "  \"taxon\": \"Homo sapiens\",\n" +
@@ -177,9 +174,9 @@ public class TestSheetMapper {
                 "  }\n" +
                 "}"))
         ;
-        sheet.setStatus(SheetStatusEnum.Submitted);
+        batch.setStatus("Submitted");
 
-        return sheet;
+        return batch;
     }
 
     public static com.fasterxml.jackson.databind.JsonNode stringToJsonNode(String jsonContent){
@@ -191,29 +188,6 @@ public class TestSheetMapper {
             throw new RuntimeException(e);
         }
         return actualObj;
-    }
-
-    private Template template() {
-        Template template = Template.builder().name("test-template").targetType("samples").build();
-        template
-                .add(
-                        "alias",
-                        FieldCapture.builder().fieldName("alias").build()
-                )
-                .add(
-                        "taxon id",
-                        FieldCapture.builder().fieldName("taxonId").fieldType(JsonFieldType.IntegerNumber).build()
-                )
-                .add(
-                        "taxon",
-                        FieldCapture.builder().fieldName("taxon").build()
-                );
-
-        template.setDefaultCapture(
-                AttributeCapture.builder().build()
-        );
-
-        return template;
     }
 
 }
