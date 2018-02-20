@@ -22,6 +22,7 @@ import uk.ac.ebi.subs.repository.model.templates.AttributeCapture;
 import uk.ac.ebi.subs.repository.model.templates.FieldCapture;
 import uk.ac.ebi.subs.repository.model.templates.JsonFieldType;
 import uk.ac.ebi.subs.repository.model.templates.Template;
+import uk.ac.ebi.subs.repository.repos.SubmittablesBatchRepository;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -45,12 +46,15 @@ public class BatchLoaderTest {
     @MockBean
     private TokenService tokenService;
 
+    @MockBean
+    private SubmittablesBatchRepository submittablesBatchRepository;
+
     private final static String TOKEN_PLACEHOLDER = "mytoken";
     private final static Map<String, String> HEADERS = new HashMap<>();
 
     @Before
     public void setUp() {
-        submittablesBatchLoaderService = new SubmittablesBatchLoaderService(tokenService, uniRestWrapper);
+        submittablesBatchLoaderService = new SubmittablesBatchLoaderService(tokenService, uniRestWrapper,submittablesBatchRepository);
         submittablesBatchLoaderService.setRootApiUrl("http://localhost:8080/api");
 
         Submission submission = new Submission();
@@ -139,6 +143,8 @@ public class BatchLoaderTest {
 
         batch.setSubmission(submission);
         batch.setTargetType("samples");
+
+        batch.setVersion(0L);
 
         batch.addDocument(new SubmittablesBatch.Document());
         batch.addDocument(new SubmittablesBatch.Document());

@@ -12,21 +12,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.web.client.HttpClientErrorException;
 import uk.ac.ebi.subs.repository.model.SubmittablesBatch;
-import uk.ac.ebi.subs.repository.model.sheets.Sheet;
+import uk.ac.ebi.subs.repository.repos.SubmittablesBatchRepository;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 @Service
 public class SubmittablesBatchLoaderService {
 
     private static final Logger logger = LoggerFactory.getLogger(SubmittablesBatchLoaderService.class);
 
-    public SubmittablesBatchLoaderService(TokenService tokenService, UniRestWrapper uniRestWrapper) {
+    public SubmittablesBatchLoaderService(TokenService tokenService, UniRestWrapper uniRestWrapper, SubmittablesBatchRepository submittablesBatchRepository) {
         this.tokenService = tokenService;
         this.uniRestWrapper = uniRestWrapper;
+        this.submittablesBatchRepository = submittablesBatchRepository;
     }
 
     @Value("${usi.apiRootUrl}")
@@ -39,28 +41,22 @@ public class SubmittablesBatchLoaderService {
     private final TokenService tokenService;
     private final UniRestWrapper uniRestWrapper;
 
+    private SubmittablesBatchRepository submittablesBatchRepository;
+
     public void loadBatch(SubmittablesBatch batch) {
         Assert.notNull(batch);
         Assert.notNull(batch.getSubmission());
         Assert.notNull(batch.getDocuments());
         Assert.notNull(batch.getTargetType());
 
-        UriTemplate submissionUriTemplate = new UriTemplate(rootApiUrl + "/submissions/{submissionId}");
-        UriTemplate searchUriTemplate = new UriTemplate(rootApiUrl + "/{type}/search/by-submissionId-and-alias{?submissionId,alias,projection}");
-        UriTemplate createUriTemplate = new UriTemplate(rootApiUrl + "/submissions/{submissionId}/contents/{type}");
 
         String targetType = batch.getTargetType().toLowerCase();
         String submissionId = batch.getSubmission().getId();
 
         logger.info("mapping {} for submission {} from sheet {}", targetType, submissionId, batch.getId());
 
-        Map<String, String> submissionExpansionParams = new HashMap<>();
-        submissionExpansionParams.put("submissionId", submissionId);
-
-        URI submissionUri = submissionUriTemplate.expand(submissionExpansionParams);
-
         try {
-            submitByHttp(batch, searchUriTemplate, createUriTemplate, targetType, submissionId, submissionUri);
+            submitByHttp(batch);
         } catch (HttpClientErrorException e) {
             logger.error("HttpClientErrorException {} {}", e.getRawStatusCode(), e.getResponseBodyAsString());
             throw e;
@@ -68,46 +64,77 @@ public class SubmittablesBatchLoaderService {
 
     }
 
-    private void submitByHttp(SubmittablesBatch batch, UriTemplate searchUriTemplate, UriTemplate createUriTemplate, String targetType, String submissionId, URI submissionUri) {
-        buildSubmittableJson(batch, submissionUri)
-                .parallel()
-                .filter(json -> json.has("alias"))
-                .filter(json -> json.getString("alias") != null && !json.getString("alias").isEmpty())
-                .forEach(json -> {
+    private void submitByHttp(SubmittablesBatch batch) {
+        UriTemplate searchUriTemplate = new UriTemplate(rootApiUrl + "/{type}/search/by-submissionId-and-alias{?submissionId,alias,projection}");
+        UriTemplate createUriTemplate = new UriTemplate(rootApiUrl + "/submissions/{submissionId}/contents/{type}");
+        UriTemplate submissionUriTemplate = new UriTemplate(rootApiUrl + "/submissions/{submissionId}");
 
-                    String alias = json.getString("alias");
+        String targetType = batch.getTargetType();
+        String submissionId = batch.getSubmission().getId();
 
-                    Map<String, String> expansionParams = new HashMap<>();
-                    expansionParams.put("submissionId", submissionId);
-                    expansionParams.put("alias", alias);
-                    expansionParams.put("type", targetType);
+        Map<String, String> submissionExpansionParams = new HashMap<>();
+        submissionExpansionParams.put("submissionId", submissionId);
 
-                    URI queryUri = searchUriTemplate.expand(expansionParams);
+        String submissionUrl = submissionUriTemplate.expand(submissionExpansionParams).toString();
 
-                    logger.debug("mapping submittable {} {}", targetType, alias);
+        List<SubmittablesBatch.Document> documentsToLoad = batch.getDocuments().stream()
+                .filter(document -> !document.isProcessed())
+                .collect(Collectors.toList());
 
-                    HttpResponse<JsonNode> queryResponse = uniRestWrapper.getJson(queryUri.toString(), requestHeaders());
+        int numberProcessed = 0;
 
-                    logger.debug("query response code {} {}");
+        for (SubmittablesBatch.Document document : documentsToLoad) {
+            JSONObject json = new JSONObject(document.getDocument());
 
-                    if (HttpStatus.OK.value() == queryResponse.getStatus()) {
-                        updateExistingSubmittable(json, queryResponse);
-                    } else if (HttpStatus.NOT_FOUND.value() == queryResponse.getStatus()) {
-                        createNewSubmittable(createUriTemplate, json, expansionParams);
-                    } else {
-                        throw new HttpClientErrorException(
-                                HttpStatus.valueOf(queryResponse.getStatus()),
-                                queryResponse.getBody().toString()
-                        );
-                    }
+            String alias = json.getString("alias");
 
-                });
+            if (alias == null || alias.isEmpty()){
+                document.addError("Please provide an alias");
+                document.setProcessed(true);
+            }
+
+            Map<String, String> expansionParams = new HashMap<>();
+            expansionParams.put("submissionId", submissionId);
+            expansionParams.put("alias", alias);
+            expansionParams.put("type", targetType);
+
+            json.put("submission", submissionUrl);
+
+
+            URI queryUri = searchUriTemplate.expand(expansionParams);
+
+            logger.debug("mapping submittable {} {}", targetType, alias);
+
+            HttpResponse<JsonNode> queryResponse = uniRestWrapper.getJson(queryUri.toString(), requestHeaders());
+
+            logger.debug("query response code {} {}");
+
+            if (HttpStatus.OK.value() == queryResponse.getStatus()) {
+                updateExistingSubmittable(document, json, queryResponse);
+            } else if (HttpStatus.NOT_FOUND.value() == queryResponse.getStatus()) {
+                createNewSubmittable(document, createUriTemplate, json, expansionParams);
+            } else {
+                throw new HttpClientErrorException(
+                        HttpStatus.valueOf(queryResponse.getStatus()),
+                        queryResponse.getBody().toString()
+                );
+            }
+
+            numberProcessed++;
+            if (numberProcessed % 100 == 0){
+                batch.setVersion(batch.getVersion() + 1);
+                submittablesBatchRepository.save(batch);
+            }
+
+        }
+
+        batch.setStatus("Completed");
+        batch.setVersion(batch.getVersion() + 1);
+        submittablesBatchRepository.save(batch);
     }
 
-    private void createNewSubmittable(UriTemplate createUriTemplate, JSONObject json, Map<String, String> expansionParams) {
+    private void createNewSubmittable(SubmittablesBatch.Document document, UriTemplate createUriTemplate, JSONObject json, Map<String, String> expansionParams) {
         URI createUri = createUriTemplate.expand(expansionParams);
-
-        String requestBodyJson = json.toString();
 
         HttpResponse<JsonNode> response = uniRestWrapper.postJson(
                 createUri.toString(),
@@ -116,29 +143,28 @@ public class SubmittablesBatchLoaderService {
         );
 
         if (response.getStatus() > 201) {
-            throw new HttpClientErrorException(
-                    HttpStatus.valueOf(response.getStatus()),
-                    response.getBody().toString()
-            );
+            document.addError("Error while loading document: "+response.getBody().toString());
         }
+        else {
+            document.setProcessed(true);
+        }
+
     }
 
-    private void updateExistingSubmittable(JSONObject json, HttpResponse<JsonNode> queryResponse) {
+    private void updateExistingSubmittable(SubmittablesBatch.Document document, JSONObject json, HttpResponse<JsonNode> queryResponse) {
         JSONObject linksObject = queryResponse.getBody().getObject().getJSONObject("_links");
 
         String selfURI = linksObject.getJSONObject("self").getString("href");
-
-        String requestBodyJson = json.toString();
 
         HttpResponse<JsonNode> response = uniRestWrapper.putJson(
                 selfURI, requestHeaders(), json
         );
 
         if (response.getStatus() > 201) {
-            throw new HttpClientErrorException(
-                    HttpStatus.valueOf(response.getStatus()),
-                    response.getBody().toString()
-            );
+            document.addError("Error while loading document: "+response.getBody().toString());
+        }
+        else {
+            document.setProcessed(true);
         }
 
     }
@@ -149,18 +175,6 @@ public class SubmittablesBatchLoaderService {
         headers.put("Content-Type", "application/json");
         headers.put("Accept", "application/hal+json");
         return headers;
-    }
-
-    public Stream<JSONObject> buildSubmittableJson(SubmittablesBatch batch, URI submissionUrl) {
-        return batch.getDocuments().stream()
-                .filter(document -> !document.isProcessed())
-                .filter(document -> document.getDocument() != null)
-                .map(document -> document.getDocument())
-                .map(d -> new JSONObject(d))
-                .map(jsonObject -> {
-                    jsonObject.put("submission", submissionUrl.toString());
-                    return jsonObject;
-                });
     }
 
 }
