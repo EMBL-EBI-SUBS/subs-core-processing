@@ -1,8 +1,8 @@
-package uk.ac.ebi.subs.batchloader;
+package uk.ac.ebi.subs.sheetloader;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import uk.ac.ebi.subs.repository.repos.SubmittablesBatchRepository;
+
 
 import java.util.Calendar;
 import java.util.Date;
@@ -17,11 +17,11 @@ import java.util.GregorianCalendar;
  *
  * At the moment, it's every 4 hours, remove completed records over a week old
  */
-public class BatchCleanupTask {
+public class SheetCleanupTask {
 
     private static final long FOUR_HOUR_IN_MILLIS = 1000l * 60 * 60 * 4;
 
-    private SubmittablesBatchRepository submittablesBatchRepository;
+    private SheetCleanupRepository sheetCleanupRepository;
 
 
     @Scheduled(fixedDelay = FOUR_HOUR_IN_MILLIS, initialDelay = FOUR_HOUR_IN_MILLIS)
@@ -31,7 +31,7 @@ public class BatchCleanupTask {
         cal.add(Calendar.DAY_OF_MONTH, -7);
         Date sevenDaysAgo = cal.getTime();
 
-        submittablesBatchRepository.removeByLastModifiedDateBeforeAndStatus(
+        sheetCleanupRepository.removeByLastModifiedDateBeforeAndStatus(
                 sevenDaysAgo,
                 "Completed"
         );

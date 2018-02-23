@@ -1,4 +1,4 @@
-package uk.ac.ebi.subs.batchloader;
+package uk.ac.ebi.subs.sheetloader;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
