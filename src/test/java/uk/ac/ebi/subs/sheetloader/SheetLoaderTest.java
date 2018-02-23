@@ -1,6 +1,5 @@
-package uk.ac.ebi.subs.sheetmapper;
+package uk.ac.ebi.subs.sheetloader;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import org.apache.http.ProtocolVersion;
@@ -10,36 +9,43 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
 import uk.ac.ebi.subs.data.component.Team;
 import uk.ac.ebi.subs.repository.model.Submission;
+import uk.ac.ebi.subs.repository.model.sheets.Row;
 import uk.ac.ebi.subs.repository.model.sheets.Sheet;
 import uk.ac.ebi.subs.repository.model.sheets.SheetStatusEnum;
 import uk.ac.ebi.subs.repository.model.templates.AttributeCapture;
 import uk.ac.ebi.subs.repository.model.templates.Capture;
 import uk.ac.ebi.subs.repository.model.templates.FieldCapture;
 import uk.ac.ebi.subs.repository.model.templates.JsonFieldType;
+import uk.ac.ebi.subs.repository.model.templates.NoOpCapture;
 import uk.ac.ebi.subs.repository.model.templates.Template;
+import uk.ac.ebi.subs.repository.repos.SheetRepository;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
-public class TestSheetMapper {
+public class SheetLoaderTest {
 
 
-    private SheetMapperService sheetMapperService;
+    private SheetLoaderService sheetLoaderService;
 
     @MockBean
     private UniRestWrapper uniRestWrapper;
@@ -47,13 +53,17 @@ public class TestSheetMapper {
     @MockBean
     private TokenService tokenService;
 
+    @MockBean
+    private SheetRepository sheetRepository;
+
     private final static String TOKEN_PLACEHOLDER = "mytoken";
     private final static Map<String, String> HEADERS = new HashMap<>();
 
+
     @Before
     public void setUp() {
-        sheetMapperService = new SheetMapperService(tokenService, uniRestWrapper);
-        sheetMapperService.setRootApiUrl("http://localhost:8080/api");
+        sheetLoaderService = new SheetLoaderService(tokenService, uniRestWrapper, sheetRepository);
+        sheetLoaderService.setRootApiUrl("http://localhost:8080/api");
 
         Submission submission = new Submission();
         submission.setTeam(Team.build("test"));
@@ -66,9 +76,23 @@ public class TestSheetMapper {
 
 
         given(tokenService.aapToken()).willReturn(TOKEN_PLACEHOLDER);
+
+        Template template = template();
+        Map<String, Capture> captureMap = template.getColumnCaptures();
+
+        expectedCaptures = Arrays.asList(
+                captureMap.get("unique name"),
+                captureMap.get("title"),
+                captureMap.get("description"),
+                captureMap.get("taxon"),
+                captureMap.get("taxon id"),
+                AttributeCapture.builder().build(),
+                NoOpCapture.builder().build()
+        );
     }
 
     private Sheet sheet;
+    private List<Capture> expectedCaptures;
 
     private HttpResponse<JsonNode> response(HttpStatus status) {
         return response(status, new JSONObject());
@@ -88,9 +112,50 @@ public class TestSheetMapper {
         return unirestResponse;
     }
 
+    @Test
+    public void testMappingHeadersToColumnCaptures() {
+
+        List<Capture> actualColumnMappings = sheetLoaderService.mapColumns(
+                sheet.getHeaderRow(),
+                sheet.getTemplate().getColumnCaptures(),
+                Optional.of(sheet.getTemplate().getDefaultCapture())
+        );
+
+        assertThat(actualColumnMappings, equalTo(expectedCaptures));
+    }
 
     @Test
-    public void test() {
+    public void testRowToDocumentConversion() {
+        JSONObject expectedJson = stringToJsonObject(
+                "{\n" +
+                        "  \"alias\": \"s1\",\n" +
+                        "  \"taxon\": \"Homo sapiens\",\n" +
+                        "  \"taxonId\": 9606,\n" +
+                        "  \"description\": \"\",\n" +
+                        "  \"title\": \"\",\n" +
+                        "  \"attributes\": {\n" +
+                        "    \"height\": [\n" +
+                        "      {\n" +
+                        "        \"value\": \"1.7\",\n" +
+                        "        \"units\": \"meters\"\n" +
+                        "      }\n" +
+                        "    ]\n" +
+                        "  }\n" +
+                        "}");
+
+
+        JSONObject actualJson = sheetLoaderService.rowToDocument(
+                sheet.getRows().get(0),
+                expectedCaptures,
+                sheet.getHeaderRow().getCells()
+        );
+
+        JSONAssert.assertEquals(expectedJson, actualJson, true);
+        assertTrue(sheet.getRows().get(0).isProcessed());
+    }
+
+    @Test
+    public void testLoadingOfDocumentsToMockApi() {
 
         when(uniRestWrapper.getJson(
                 "http://localhost:8080/api/samples/search/by-submissionId-and-alias?submissionId=1234&alias=s1",
@@ -126,7 +191,7 @@ public class TestSheetMapper {
                 response(HttpStatus.OK)
         );
 
-        sheetMapperService.mapSheet(sheet);
+        sheetLoaderService.loadSheet(sheet);
     }
 
     private Map<String, Object> mapOf(String key, Object value) {
@@ -142,78 +207,55 @@ public class TestSheetMapper {
         sheet.setSubmission(submission);
         sheet.setTemplate(template());
 
-        sheet.addRow(new String[]{"alias", "taxon id", "taxon", "height", "units"});
-        sheet.addRow(new String[]{"s1", "9606", "Homo sapiens", "1.7", "meters"});
-        sheet.addRow(new String[]{"s2", "9606", "Homo sapiens", "1.7", "meters"});
+        sheet.setVersion(0L);
 
-        sheet.getRows().get(1).setDocument(
-                stringToJsonNode(
-                "{\n" +
-                "  \"alias\": \"s1\",\n" +
-                "  \"taxon\": \"Homo sapiens\",\n" +
-                "  \"taxonId\": 9606,\n" +
-                "  \"attributes\": {\n" +
-                "    \"height\": [\n" +
-                "      {\n" +
-                "        \"value\": \"1.7\",\n" +
-                "        \"units\": \"meters\"\n" +
-                "      }\n" +
-                "    ]\n" +
-                "  }\n" +
-                "}"))
-        ;
-        sheet.getRows().get(2).setDocument(
-                stringToJsonNode("{\n" +
-                "  \"alias\": \"s2\",\n" +
-                "  \"taxon\": \"Homo sapiens\",\n" +
-                "  \"taxonId\": 9606,\n" +
-                "  \"attributes\": {\n" +
-                "    \"height\": [\n" +
-                "      {\n" +
-                "        \"value\": \"1.7\",\n" +
-                "        \"units\": \"meters\"\n" +
-                "      }\n" +
-                "    ]\n" +
-                "  }\n" +
-                "}"))
-        ;
+        sheet.setHeaderRow(new Row(new String[]{"unique name", "title", "description", "taxon", "taxon id", "height", "units"}));
+        sheet.addRow(new String[]{
+                "s1", "", "", "Homo sapiens", "9606", "1.7", "meters"
+        });
+        sheet.addRow(new String[]{
+                "s2", "", "", "Homo sapiens", "9606", "1.7", "meters"
+        });
+
         sheet.setStatus(SheetStatusEnum.Submitted);
 
         return sheet;
     }
 
-    public static com.fasterxml.jackson.databind.JsonNode stringToJsonNode(String jsonContent){
-        ObjectMapper mapper = new ObjectMapper();
-        com.fasterxml.jackson.databind.JsonNode actualObj = null;
-        try {
-            actualObj = mapper.readTree(jsonContent);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return actualObj;
-    }
-
     private Template template() {
-        Template template = Template.builder().name("test-template").targetType("samples").build();
+        Template template = Template.builder()
+                .name("samples-template")
+                .targetType("samples")
+                .build();
+
         template
                 .add(
-                        "alias",
+                        "unique name",
                         FieldCapture.builder().fieldName("alias").build()
                 )
-                .add(
-                        "taxon id",
-                        FieldCapture.builder().fieldName("taxonId").fieldType(JsonFieldType.IntegerNumber).build()
+                .add("title",
+                        FieldCapture.builder().fieldName("title").build()
                 )
                 .add(
-                        "taxon",
+                        "description",
+                        FieldCapture.builder().fieldName("description").build()
+                )
+                .add("taxon",
                         FieldCapture.builder().fieldName("taxon").build()
+                )
+                .add("taxon id",
+                        FieldCapture.builder().fieldName("taxonId").fieldType(JsonFieldType.IntegerNumber).build()
                 );
 
         template.setDefaultCapture(
                 AttributeCapture.builder().build()
         );
-
         return template;
+    }
+
+
+    private JSONObject stringToJsonObject(String jsonContent) {
+        return new JSONObject(jsonContent);
     }
 
 }

@@ -1,4 +1,4 @@
-package uk.ac.ebi.subs.sheetmapper;
+package uk.ac.ebi.subs.sheetloader;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
