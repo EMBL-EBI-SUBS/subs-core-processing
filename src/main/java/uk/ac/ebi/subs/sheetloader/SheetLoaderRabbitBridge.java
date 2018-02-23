@@ -35,13 +35,7 @@ public class SheetLoaderRabbitBridge {
 
         logger.info("sheet mapped", sheet.getId());
 
-        sheet = sheetRepository.findOne(sheet.getId());
-        sheet.setStatus(SheetStatusEnum.Completed);
-        sheet.setVersion(sheet.getVersion() + 1);
-        sheet.setLastModifiedDate(new Date());
-        sheetRepository.save(sheet);
 
-        logger.info("sheet status updated", sheet.getId());
     }
 
 

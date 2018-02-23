@@ -233,14 +233,12 @@ public class SheetLoaderService {
 
             numberProcessed++;
             if (numberProcessed % 100 == 0) {
-                sheet.setVersion(sheet.getVersion() + 1);
                 sheetRepository.save(sheet);
             }
 
         }
 
         sheet.setStatus(SheetStatusEnum.Completed);
-        sheet.setVersion(sheet.getVersion() + 1);
         sheetRepository.save(sheet);
     }
 
