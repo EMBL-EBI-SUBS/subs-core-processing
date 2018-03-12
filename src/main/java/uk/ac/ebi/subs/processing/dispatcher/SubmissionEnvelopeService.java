@@ -1,17 +1,28 @@
 package uk.ac.ebi.subs.processing.dispatcher;
 
-import groovy.util.logging.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
-import uk.ac.ebi.subs.progressmonitor.ProgressMonitorListener;
+import uk.ac.ebi.subs.processing.fileupload.UploadedFile;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
-import uk.ac.ebi.subs.repository.repos.submittables.*;
+import uk.ac.ebi.subs.repository.repos.fileupload.FileRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.AnalysisRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.AssayDataRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.AssayRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.EgaDacPolicyRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.EgaDacRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.EgaDatasetRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.ProjectRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.ProtocolRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.SampleGroupRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.StudyRepository;
 
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -31,8 +42,15 @@ public class SubmissionEnvelopeService {
     private SampleGroupRepository sampleGroupRepository;
     private SampleRepository sampleRepository;
     private StudyRepository studyRepository;
+    private FileRepository fileRepository;
 
-    public SubmissionEnvelopeService(SubmissionRepository submissionRepository, AnalysisRepository analysisRepository, AssayDataRepository assayDataRepository, AssayRepository assayRepository, EgaDacPolicyRepository egaDacPolicyRepository, EgaDacRepository egaDacRepository, EgaDatasetRepository egaDatasetRepository, ProjectRepository projectRepository, ProtocolRepository protocolRepository, SampleGroupRepository sampleGroupRepository, SampleRepository sampleRepository, StudyRepository studyRepository) {
+    public SubmissionEnvelopeService(SubmissionRepository submissionRepository, AnalysisRepository analysisRepository,
+                                     AssayDataRepository assayDataRepository, AssayRepository assayRepository,
+                                     EgaDacPolicyRepository egaDacPolicyRepository, EgaDacRepository egaDacRepository,
+                                     EgaDatasetRepository egaDatasetRepository, ProjectRepository projectRepository,
+                                     ProtocolRepository protocolRepository, SampleGroupRepository sampleGroupRepository,
+                                     SampleRepository sampleRepository, StudyRepository studyRepository,
+                                     FileRepository fileRepository) {
         this.submissionRepository = submissionRepository;
         this.analysisRepository = analysisRepository;
         this.assayDataRepository = assayDataRepository;
@@ -45,6 +63,7 @@ public class SubmissionEnvelopeService {
         this.sampleGroupRepository = sampleGroupRepository;
         this.sampleRepository = sampleRepository;
         this.studyRepository = studyRepository;
+        this.fileRepository = fileRepository;
     }
 
     public SubmissionEnvelope fetchOne(String submissionId) {
@@ -67,6 +86,19 @@ public class SubmissionEnvelopeService {
         submissionEnvelope.getSampleGroups().addAll(sampleGroupRepository.findBySubmissionId(submissionId));
         submissionEnvelope.getSamples().addAll(sampleRepository.findBySubmissionId(submissionId));
         submissionEnvelope.getStudies().addAll(studyRepository.findBySubmissionId(submissionId));
+        submissionEnvelope.getUploadedFiles().addAll(
+                fileRepository.findBySubmissionId(submissionId).stream().map( file -> {
+                    UploadedFile uploadedFile = new UploadedFile();
+                    uploadedFile.setFilename(file.getFilename());
+                    uploadedFile.setPath(file.getTargetPath());
+                    uploadedFile.setSubmissionId(file.getSubmissionId());
+                    uploadedFile.setTotalSize(file.getTotalSize());
+                    uploadedFile.setChecksum(file.getChecksum());
+
+                    return uploadedFile;
+                }
+                ).collect(Collectors.toList())
+        );
 
         return submissionEnvelope;
     }
