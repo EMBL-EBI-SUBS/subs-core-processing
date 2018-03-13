@@ -12,16 +12,27 @@ import uk.ac.ebi.subs.data.component.SampleRef;
 import uk.ac.ebi.subs.data.component.SampleUse;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.data.submittable.Assay;
+import uk.ac.ebi.subs.data.submittable.AssayData;
 import uk.ac.ebi.subs.data.submittable.Sample;
 import uk.ac.ebi.subs.data.submittable.Submittable;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
+import uk.ac.ebi.subs.processing.fileupload.UploadedFile;
 import uk.ac.ebi.subs.repository.RefLookupService;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
+import uk.ac.ebi.subs.repository.model.fileupload.File;
+import uk.ac.ebi.subs.repository.repos.fileupload.FileRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusBulkOperations;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SubmittableRepository;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -177,6 +188,34 @@ public class DispatcherServiceImpl implements DispatcherService {
         submissionEnvelope.getSupportingSamples().addAll((Set<? extends Sample>) refLookupService.lookupRefs(assaySampleRefs));
     }
 
+    @Override
+    public void insertUploadedFiles(SubmissionEnvelope submissionEnvelope) {
+        String submissionId = submissionEnvelope.getSubmission().getId();
+        Map<String, File> files = filesByFilename(fileRepository.findBySubmissionId(submissionId));
+
+        List<UploadedFile> uploadedFiles = submissionEnvelope.getAssayData().stream().map(
+                AssayData::getFiles
+        ).collect(Collectors.toList())
+            .stream().flatMap(List::stream)
+                .map(
+                    fileRef -> {
+                        String fileName = fileRef.getName();
+                        File file = files.get(fileName);
+                        UploadedFile uploadedFile = new UploadedFile();
+                        uploadedFile.setFilename(file.getFilename());
+                        uploadedFile.setPath(file.getTargetPath());
+                        uploadedFile.setSubmissionId(file.getSubmissionId());
+                        uploadedFile.setTotalSize(file.getTotalSize());
+                        uploadedFile.setChecksum(file.getChecksum());
+
+                        return uploadedFile;
+                    }
+        ).collect(Collectors.toList());
+
+
+        submissionEnvelope.getUploadedFiles().addAll(uploadedFiles);
+    }
+
     public void determineSupportingInformationRequired(SubmissionEnvelope submissionEnvelope) {
         List<Sample> samples = submissionEnvelope.getSamples();
         List<Assay> assays = submissionEnvelope.getAssays();
@@ -235,13 +274,19 @@ public class DispatcherServiceImpl implements DispatcherService {
     private ProcessingStatusBulkOperations processingStatusBulkOperations;
     private ProcessingStatusRepository processingStatusRepository;
     private SubmissionEnvelopeStuffer submissionEnvelopeStuffer;
+    private FileRepository fileRepository;
 
-    public DispatcherServiceImpl(Map<Class<? extends StoredSubmittable>, SubmittableRepository<? extends StoredSubmittable>> submittableRepositoryMap, RefLookupService refLookupService, SubmissionEnvelopeService submissionEnvelopeService, ProcessingStatusBulkOperations processingStatusBulkOperations, ProcessingStatusRepository processingStatusRepository, SubmissionEnvelopeStuffer submissionEnvelopeStuffer) {
+    public DispatcherServiceImpl(Map<Class<? extends StoredSubmittable>, SubmittableRepository<? extends StoredSubmittable>> submittableRepositoryMap,
+                                 RefLookupService refLookupService, SubmissionEnvelopeService submissionEnvelopeService,
+                                 ProcessingStatusBulkOperations processingStatusBulkOperations,
+                                 ProcessingStatusRepository processingStatusRepository, SubmissionEnvelopeStuffer submissionEnvelopeStuffer,
+                                 FileRepository fileRepository) {
         this.refLookupService = refLookupService;
         this.submissionEnvelopeService = submissionEnvelopeService;
         this.processingStatusBulkOperations = processingStatusBulkOperations;
         this.processingStatusRepository = processingStatusRepository;
         this.submissionEnvelopeStuffer = submissionEnvelopeStuffer;
+        this.fileRepository = fileRepository;
 
         setupStatusesToProcess();
         buildSubmittableRepositoryMap(submittableRepositoryMap);
@@ -261,4 +306,10 @@ public class DispatcherServiceImpl implements DispatcherService {
         processingStatusesToAllow.add(ProcessingStatusEnum.Submitted.name());
     }
 
+    private Map<String, File> filesByFilename(List<File> files) {
+        Map<String, File> filesByFilename = new HashMap<>();
+        files.forEach(file -> filesByFilename.put(file.getFilename(), file));
+
+        return filesByFilename;
+    }
 }
