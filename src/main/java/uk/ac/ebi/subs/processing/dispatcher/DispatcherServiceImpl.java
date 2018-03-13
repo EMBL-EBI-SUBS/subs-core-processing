@@ -191,6 +191,7 @@ public class DispatcherServiceImpl implements DispatcherService {
     @Override
     public void insertUploadedFiles(SubmissionEnvelope submissionEnvelope) {
         String submissionId = submissionEnvelope.getSubmission().getId();
+        Map<String, File> files = filesByFilename(fileRepository.findBySubmissionId(submissionId));
 
         List<UploadedFile> uploadedFiles = submissionEnvelope.getAssayData().stream().map(
                 AssayData::getFiles
@@ -199,7 +200,7 @@ public class DispatcherServiceImpl implements DispatcherService {
                 .map(
                     fileRef -> {
                         String fileName = fileRef.getName();
-                        File file = fileRepository.findByFilenameAndSubmissionId(fileName, submissionId);
+                        File file = files.get(fileName);
                         UploadedFile uploadedFile = new UploadedFile();
                         uploadedFile.setFilename(file.getFilename());
                         uploadedFile.setPath(file.getTargetPath());
@@ -305,4 +306,10 @@ public class DispatcherServiceImpl implements DispatcherService {
         processingStatusesToAllow.add(ProcessingStatusEnum.Submitted.name());
     }
 
+    private Map<String, File> filesByFilename(List<File> files) {
+        Map<String, File> filesByFilename = new HashMap<>();
+        files.forEach(file -> filesByFilename.put(file.getFilename(), file));
+
+        return filesByFilename;
+    }
 }
