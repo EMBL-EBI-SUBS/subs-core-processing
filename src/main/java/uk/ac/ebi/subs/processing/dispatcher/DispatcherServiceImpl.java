@@ -195,8 +195,8 @@ public class DispatcherServiceImpl implements DispatcherService {
         List<UploadedFile> uploadedFiles = submissionEnvelope.getAssayData().stream().map(
                 AssayData::getFiles
         ).collect(Collectors.toList())
-            .stream().flatMap(List::stream).collect(Collectors.toList())
-                .stream().map(
+            .stream().flatMap(List::stream)
+                .map(
                     fileRef -> {
                         String fileName = fileRef.getName();
                         File file = fileRepository.findByFilenameAndSubmissionId(fileName, submissionId);
