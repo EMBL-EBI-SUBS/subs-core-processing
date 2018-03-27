@@ -4,7 +4,6 @@ import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 
-
 import java.util.Map;
 
 /**
@@ -20,4 +19,5 @@ public interface DispatcherService {
 
     void insertReferencedSamples(SubmissionEnvelope submissionEnvelope);
 
+    void insertUploadedFiles(SubmissionEnvelope submissionEnvelope);
 }
