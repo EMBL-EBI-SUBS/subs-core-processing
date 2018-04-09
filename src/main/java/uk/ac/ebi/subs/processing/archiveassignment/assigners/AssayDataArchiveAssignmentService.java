@@ -21,14 +21,18 @@ public class AssayDataArchiveAssignmentService implements ArchiveAssigner<AssayD
 
     @Override
     public Archive assignArchive(AssayData submittable) {
-        AssayRef assayRef = submittable.getAssayRef();
-        Assay assay;
-        if (assayRef.isAccessioned()) {
-            assay = assayRepository.findFirstByAccessionOrderByCreatedDateDesc(assayRef.getAccession());
-        } else {
-            assay = assayRepository.findFirstByTeamNameAndAliasOrderByCreatedDateDesc(
-                    assayRef.getTeam(), assayRef.getAlias()
-            );
+        Assay assay = null;
+
+        for (AssayRef assayRef : submittable.getAssayRefs()) {
+
+            if (assayRef.isAccessioned()) {
+                assay = assayRepository.findFirstByAccessionOrderByCreatedDateDesc(assayRef.getAccession());
+            } else {
+                assay = assayRepository.findFirstByTeamNameAndAliasOrderByCreatedDateDesc(
+                        assayRef.getTeam(), assayRef.getAlias()
+                );
+            }
+
         }
         return assayArchiveAssignmentService.assignArchive(assay);
     }
