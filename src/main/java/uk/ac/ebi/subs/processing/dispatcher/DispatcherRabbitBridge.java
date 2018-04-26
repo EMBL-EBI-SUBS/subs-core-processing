@@ -7,12 +7,15 @@ import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.component.Archive;
+import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.processing.archiveassignment.SubmissionArchiveAssignmentService;
 import uk.ac.ebi.subs.repository.model.Submission;
+import uk.ac.ebi.subs.repository.model.SubmissionStatus;
+import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,19 +29,21 @@ public class DispatcherRabbitBridge {
 
     private static final Logger logger = LoggerFactory.getLogger(DispatcherRabbitBridge.class);
 
-    RabbitMessagingTemplate rabbitMessagingTemplate;
+    private RabbitMessagingTemplate rabbitMessagingTemplate;
     private DispatcherService dispatcherService;
-    private SubmissionArchiveAssignmentService submissionArchiveAssignmentService;
+    private SubmissionCompletionService submissionCompletionService;
 
     public DispatcherRabbitBridge(
             RabbitMessagingTemplate rabbitMessagingTemplate,
             MessageConverter messageConverter,
-            DispatcherService dispatcherService
+            DispatcherService dispatcherService,
+            SubmissionCompletionService submissionCompletionService
 
     ) {
         this.rabbitMessagingTemplate = rabbitMessagingTemplate;
         this.rabbitMessagingTemplate.setMessageConverter(messageConverter);
         this.dispatcherService = dispatcherService;
+        this.submissionCompletionService = submissionCompletionService;
     }
 
 
@@ -82,7 +87,13 @@ public class DispatcherRabbitBridge {
     @RabbitListener(queues = Queues.SUBMISSION_DISPATCHER)
     public void dispatchToArchives(Submission submission) {
 
-        logger.info("dispatchToArchives {}", submission);
+        logger.debug("dispatchToArchives {}", submission);
+
+        if (submissionCompletionService.allSubmittablesCompleted(submission)){
+            submissionCompletionService.markSubmissionAsCompleted(submission);
+            logger.debug("submission completed {}", submission);
+            return;
+        }
 
 
         Map<Archive, SubmissionEnvelope> readyToDispatch = dispatcherService
@@ -113,7 +124,7 @@ public class DispatcherRabbitBridge {
             }
 
             rabbitMessagingTemplate.convertAndSend(Exchanges.SUBMISSIONS, targetTopic, submissionEnvelopeToTransmit);
-            logger.info("sent submission {} to {}", submission.getId(), targetTopic);
+            logger.debug("sent submission {} to {}", submission.getId(), targetTopic);
 
             dispatcherService.updateSubmittablesStatusToSubmitted(archive, submissionEnvelopeToTransmit);
         }
