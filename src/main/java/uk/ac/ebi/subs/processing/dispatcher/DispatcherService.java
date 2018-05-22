@@ -20,4 +20,5 @@ public interface DispatcherService {
     void insertReferencedSamples(SubmissionEnvelope submissionEnvelope);
 
     void insertUploadedFiles(SubmissionEnvelope submissionEnvelope);
+
 }
