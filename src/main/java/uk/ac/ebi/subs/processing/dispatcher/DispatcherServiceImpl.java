@@ -85,7 +85,7 @@ public class DispatcherServiceImpl implements DispatcherService {
                             .refs()
                             .filter(Objects::nonNull)
                             .filter(ref -> ref.getAlias() != null || ref.getAccession() != null) //TODO this is because of empty refs as defaults
-                            .map(ref -> lookupRefInCacheThenRepository(refLookupCache, ref) )
+                            .map(ref -> lookupRefAndFillInAccession(refLookupCache, ref) )
                             .filter(referencedSubmittable -> !isForSameArchiveAndInSameSubmission(submission, archive, referencedSubmittable))
                             .collect(Collectors.toList());
 
@@ -121,15 +121,18 @@ public class DispatcherServiceImpl implements DispatcherService {
         return readyForDispatch;
     }
 
-    private StoredSubmittable lookupRefInCacheThenRepository(Map<AbstractSubsRef, StoredSubmittable> refLookupCache, AbstractSubsRef ref) {
-        if (!refLookupCache.containsKey(ref))
-            refLookupCache.put(ref,refLookupService.lookupRef(ref));
-        return refLookupCache.get(ref);
-    }
+    private StoredSubmittable lookupRefAndFillInAccession(Map<AbstractSubsRef, StoredSubmittable> refLookupCache, AbstractSubsRef ref) {
+        if (!refLookupCache.containsKey(ref)) {
+            refLookupCache.put(ref, refLookupService.lookupRef(ref));
+        }
 
-    private boolean isBlockerForThisSubmittable(Submission submission, Archive archive, StoredSubmittable sub) {
-        return !(sub.isAccessioned() ||
-                isForSameArchiveAndInSameSubmission(submission, archive, sub));
+        StoredSubmittable ss = refLookupCache.get(ref);
+
+        if (ss != null && !ref.isAccessioned() && ss.isAccessioned()){
+            ref.setAccession(ss.getAccession());
+        }
+
+        return ss;
     }
 
     private boolean isForSameArchiveAndInSameSubmission(Submission submission, Archive archive, StoredSubmittable sub) {
