@@ -28,8 +28,6 @@ public class StudyArchiveAssignmentService implements ArchiveAssigner<Study> {
                 archive = Archive.Pride;
                 break;
             case Metabolomics_MS:
-                archive = Archive.Metabolights;
-                break;
             case Metabolomics_NMR:
                 archive = Archive.Metabolights;
                 break;
