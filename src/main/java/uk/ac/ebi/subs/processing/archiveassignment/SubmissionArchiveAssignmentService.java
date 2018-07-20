@@ -33,7 +33,6 @@ public class SubmissionArchiveAssignmentService {
                 .forEach(storedSubmittable -> {
             Archive archive = storedSubmittableArchiveAssignmentService.assignArchive(storedSubmittable);
 
-
             ProcessingStatus processingStatus = storedSubmittable.getProcessingStatus();
             processingStatus.setArchive(archive.name());
             processingStatusRepository.save(processingStatus);

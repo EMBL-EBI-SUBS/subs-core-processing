@@ -14,7 +14,16 @@ public class StoredSubmittableArchiveAssignmentService implements ArchiveAssigne
 
     private Map<Class<? extends StoredSubmittable>, ArchiveAssigner<? extends StoredSubmittable>> archiveAssignmentServiceMap;
 
-    public StoredSubmittableArchiveAssignmentService(AssayArchiveAssignmentService assayArchiveAssignmentService, AssayDataArchiveAssignmentService assayDataArchiveAssignmentService, ProjectArchiveAssignmentService projectArchiveAssignmentService, SampleArchiveAssignmentService sampleArchiveAssignmentService, StudyArchiveAssignmentService studyArchiveAssignmentService, EgaDatasetArchiveAssignmentService egaDatasetArchiveAssignmentService, EgaDacPolicyArchiveAssignmentService egaDacPolicyArchiveAssignmentService, EgaDacArchiveAssignmentService egaDacArchiveAssignmentService) {
+    public StoredSubmittableArchiveAssignmentService(
+            AssayArchiveAssignmentService assayArchiveAssignmentService,
+            AssayDataArchiveAssignmentService assayDataArchiveAssignmentService,
+            ProjectArchiveAssignmentService projectArchiveAssignmentService,
+            SampleArchiveAssignmentService sampleArchiveAssignmentService,
+            StudyArchiveAssignmentService studyArchiveAssignmentService,
+            EgaDatasetArchiveAssignmentService egaDatasetArchiveAssignmentService,
+            EgaDacPolicyArchiveAssignmentService egaDacPolicyArchiveAssignmentService,
+            EgaDacArchiveAssignmentService egaDacArchiveAssignmentService,
+            AnalysisArchiveAssignmentService analysisArchiveAssignmentService) {
         archiveAssignmentServiceMap = new HashMap<>();
 
         archiveAssignmentServiceMap.put(Assay.class, assayArchiveAssignmentService);
@@ -25,6 +34,7 @@ public class StoredSubmittableArchiveAssignmentService implements ArchiveAssigne
         archiveAssignmentServiceMap.put(EgaDac.class, egaDacArchiveAssignmentService);
         archiveAssignmentServiceMap.put(EgaDacPolicy.class, egaDacPolicyArchiveAssignmentService);
         archiveAssignmentServiceMap.put(EgaDataset.class, egaDatasetArchiveAssignmentService);
+        archiveAssignmentServiceMap.put(Analysis.class, analysisArchiveAssignmentService);
     }
 
 
