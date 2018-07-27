@@ -27,7 +27,10 @@ public class StudyArchiveAssignmentService implements ArchiveAssigner<Study> {
             case Proteomics:
                 archive = Archive.Pride;
                 break;
-            case Metabolomics_MS:
+            case Metabolomics_LCMS:
+            case Metabolomics_GCMS:
+            case Metabolomics_ImagingMS:
+            case Metabolomics_ImagingNMR:
             case Metabolomics_NMR:
                 archive = Archive.Metabolights;
                 break;
