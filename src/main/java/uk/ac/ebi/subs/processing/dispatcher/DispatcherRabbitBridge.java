@@ -119,9 +119,8 @@ public class DispatcherRabbitBridge {
 
             dispatcherService.insertReferencedSamples(submissionEnvelopeToTransmit);
 
-            if (archive.equals(Archive.Ena)) {
-                dispatcherService.insertUploadedFiles(submissionEnvelopeToTransmit);
-            }
+            dispatcherService.insertUploadedFiles(submissionEnvelopeToTransmit);
+
 
             rabbitMessagingTemplate.convertAndSend(Exchanges.SUBMISSIONS, targetTopic, submissionEnvelopeToTransmit);
             logger.debug("sent submission {} to {}", submission.getId(), targetTopic);
