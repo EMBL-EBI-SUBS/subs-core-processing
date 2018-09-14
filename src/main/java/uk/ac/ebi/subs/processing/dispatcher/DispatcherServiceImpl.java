@@ -11,6 +11,7 @@ import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.data.component.SampleRef;
 import uk.ac.ebi.subs.data.component.SampleUse;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
+import uk.ac.ebi.subs.data.submittable.Analysis;
 import uk.ac.ebi.subs.data.submittable.Assay;
 import uk.ac.ebi.subs.data.submittable.AssayData;
 import uk.ac.ebi.subs.data.submittable.Sample;
@@ -196,27 +197,44 @@ public class DispatcherServiceImpl implements DispatcherService {
         String submissionId = submissionEnvelope.getSubmission().getId();
         Map<String, File> files = filesByFilename(fileRepository.findBySubmissionId(submissionId));
 
-        List<UploadedFile> uploadedFiles = submissionEnvelope.getAssayData().stream().map(
-                AssayData::getFiles
-        ).collect(Collectors.toList())
-            .stream().flatMap(List::stream)
-                .map(
-                    fileRef -> {
-                        String fileName = fileRef.getName();
-                        File file = files.get(fileName);
-                        UploadedFile uploadedFile = new UploadedFile();
-                        uploadedFile.setFilename(file.getFilename());
-                        uploadedFile.setPath(file.getTargetPath());
-                        uploadedFile.setSubmissionId(file.getSubmissionId());
-                        uploadedFile.setTotalSize(file.getTotalSize());
-                        uploadedFile.setChecksum(file.getChecksum());
+        Stream<uk.ac.ebi.subs.data.component.File> filesReferencedInEnvelope = filesReferencedInEnvelope(submissionEnvelope);
 
-                        return uploadedFile;
-                    }
-        ).collect(Collectors.toList());
+        List<UploadedFile> uploadedFiles = filesReferencedInEnvelope
+                .map(fileRef -> files.get(fileRef.getName()))
+                .filter(Objects::nonNull)
+                .map(this::convertFileToUploadedFile)
+                .collect(Collectors.toList());
 
 
         submissionEnvelope.getUploadedFiles().addAll(uploadedFiles);
+    }
+
+    private Stream<uk.ac.ebi.subs.data.component.File> filesReferencedInEnvelope(SubmissionEnvelope submissionEnvelope) {
+        Stream<uk.ac.ebi.subs.data.component.File> analysisFileStream = submissionEnvelope.getAnalyses()
+                .stream()
+                .map(Analysis::getFiles)
+                .flatMap(List::stream);
+
+        Stream<uk.ac.ebi.subs.data.component.File> assayDataFileStream = submissionEnvelope.getAssayData()
+                .stream()
+                .map(AssayData::getFiles)
+                .flatMap(List::stream);
+
+        return Stream.concat(
+                assayDataFileStream,
+                analysisFileStream
+        );
+    }
+
+    private UploadedFile convertFileToUploadedFile(File file){
+        UploadedFile uploadedFile = new UploadedFile();
+        uploadedFile.setFilename(file.getFilename());
+        uploadedFile.setPath(file.getTargetPath());
+        uploadedFile.setSubmissionId(file.getSubmissionId());
+        uploadedFile.setTotalSize(file.getTotalSize());
+        uploadedFile.setChecksum(file.getChecksum());
+
+        return uploadedFile;
     }
 
     public void determineSupportingInformationRequired(SubmissionEnvelope submissionEnvelope) {

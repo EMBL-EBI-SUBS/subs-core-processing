@@ -1,5 +1,6 @@
 package uk.ac.ebi.subs.processing.dispatcher;
 
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import uk.ac.ebi.subs.data.component.Archive;
@@ -9,6 +10,7 @@ import uk.ac.ebi.subs.data.component.SampleUse;
 import uk.ac.ebi.subs.data.component.StudyRef;
 import uk.ac.ebi.subs.data.component.Submitter;
 import uk.ac.ebi.subs.data.component.Team;
+import uk.ac.ebi.subs.repository.model.Analysis;
 import uk.ac.ebi.subs.repository.model.Assay;
 import uk.ac.ebi.subs.repository.model.AssayData;
 import uk.ac.ebi.subs.repository.model.Sample;
@@ -18,6 +20,7 @@ import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.fileupload.FileRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.AnalysisRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.AssayDataRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.AssayRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
@@ -42,68 +45,78 @@ public class DispatchTestSubmissionSetup {
     private StudyRepository studyRepository;
     private AssayRepository assayRepository;
     private AssayDataRepository assayDataRepository;
+    private AnalysisRepository analysisRepository;
     private ProcessingStatusRepository processingStatusRepository;
     private FileRepository fileRepository;
 
     private Team team = Team.build("tester1");
-    private Submitter submitter =  Submitter.build("alice@test.ac.uk");
+    private Submitter submitter = Submitter.build("alice@test.ac.uk");
 
     public DispatchTestSubmissionSetup(SubmissionRepository submissionRepository, SubmissionHelperService submissionHelperService,
                                        SubmittableHelperService submittableHelperService, SampleRepository sampleRepository,
                                        StudyRepository studyRepository, AssayRepository assayRepository,
                                        ProcessingStatusRepository processingStatusRepository,
-                                       AssayDataRepository assayDataRepository, FileRepository fileRepository) {
+                                       AssayDataRepository assayDataRepository, FileRepository fileRepository, AnalysisRepository analysisRepository) {
         this.submissionRepository = submissionRepository;
-        this.submissionHelperService = submissionHelperService;
-        this.submittableHelperService = submittableHelperService;
         this.sampleRepository = sampleRepository;
         this.studyRepository = studyRepository;
         this.assayRepository = assayRepository;
         this.assayDataRepository = assayDataRepository;
         this.fileRepository = fileRepository;
         this.processingStatusRepository = processingStatusRepository;
+        this.analysisRepository = analysisRepository;
+        this.submissionHelperService = submissionHelperService;
+        this.submittableHelperService = submittableHelperService;
+
     }
 
-    public void clearRepos(){
+    public void clearRepos() {
         Stream.of(
-               sampleRepository,studyRepository,assayRepository,submissionRepository, processingStatusRepository
+                submissionRepository,
+                sampleRepository,
+                studyRepository,
+                assayRepository,
+                assayDataRepository,
+                fileRepository,
+                processingStatusRepository,
+                analysisRepository
         ).forEach(
-                repo -> repo.deleteAll()
+                CrudRepository::deleteAll
         );
     }
 
-    public Submission createSubmission(){
-        return submissionHelperService.createSubmission(team,submitter);
+    public Submission createSubmission() {
+        return submissionHelperService.createSubmission(team, submitter);
     }
 
-    public Sample createSample(String alias, Submission submission){
+    public Sample createSample(String alias, Submission submission) {
         Sample s = new Sample();
         s.setAlias(alias);
         s.setSubmission(submission);
         submittableHelperService.setupNewSubmittable(s);
-        setArchive(s,Archive.BioSamples);
+        setArchive(s, Archive.BioSamples);
         sampleRepository.save(s);
         return s;
     }
 
-    public Study createStudy(String alias, Submission submission){
+    public Study createStudy(String alias, Submission submission) {
         Study s = new Study();
         s.setAlias(alias);
         s.setSubmission(submission);
         s.setProjectRef(null);
         submittableHelperService.setupNewSubmittable(s);
-        setArchive(s,Archive.Ena);
+        setArchive(s, Archive.Ena);
         studyRepository.save(s);
         return s;
     }
 
-    public Assay createAssay(String alias, Submission submission, Sample sample, Study study){
+    public Assay createAssay(String alias, Submission submission, Sample sample, Study study) {
         Assay a = new Assay();
         a.setAlias(alias);
         a.setSubmission(submission);
 
         submittableHelperService.setupNewSubmittable(a);
-        setArchive(a,Archive.Ena);
+        setArchive(a, Archive.Ena);
         a.setStudyRef((StudyRef) study.asRef());
         a.getSampleUses().add(new SampleUse((SampleRef) sample.asRef()));
 
@@ -127,7 +140,24 @@ public class DispatchTestSubmissionSetup {
         return assayData;
     }
 
-    private void setArchive(StoredSubmittable submittable, Archive archive){
+    Analysis createAnalysisWithNbOfFiles(String alias, Submission submission, int nbOfFiles) {
+        Analysis analysis = new Analysis();
+        analysis.setAlias(alias);
+
+        analysis.setSubmission(submission);
+
+        submittableHelperService.setupNewSubmittable(analysis);
+        setArchive(analysis, Archive.Ena);
+
+        List<File> fileRefs = createFileRefs(nbOfFiles, alias, submission.getId());
+        analysis.setFiles(fileRefs);
+
+        analysisRepository.save(analysis);
+
+        return analysis;
+    }
+
+    private void setArchive(StoredSubmittable submittable, Archive archive) {
         Assert.notNull(archive);
         Assert.notNull(submittable.getProcessingStatus());
         Assert.notNull(submittable.getId());

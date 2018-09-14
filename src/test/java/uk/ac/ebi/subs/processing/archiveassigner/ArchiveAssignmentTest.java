@@ -11,12 +11,15 @@ import uk.ac.ebi.subs.data.component.*;
 import uk.ac.ebi.subs.processing.archiveassignment.SubmissionArchiveAssignmentService;
 import uk.ac.ebi.subs.repository.model.*;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.AnalysisRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.AssayRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.ProjectRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.StudyRepository;
 import uk.ac.ebi.subs.repository.services.SubmissionHelperService;
 import uk.ac.ebi.subs.repository.services.SubmittableHelperService;
+
+import java.util.Arrays;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -30,6 +33,7 @@ public class ArchiveAssignmentTest {
     private Study study;
     private Assay assay;
     private Project project;
+    private Analysis analysis;
 
     @Autowired
     private SubmissionArchiveAssignmentService submissionArchiveAssignmentService;
@@ -41,6 +45,7 @@ public class ArchiveAssignmentTest {
         sample = createSample("testSample", submission);
         study = createStudy("testStudy", submission, StudyDataType.Proteomics);
         assay = createAssay("testAssay", submission, sample, study);
+        analysis = createSeqVarAnalysis("testAnalysis", submission, study, sample);
         submissionArchiveAssignmentService.assignArchives(submission);
     }
 
@@ -71,6 +76,13 @@ public class ArchiveAssignmentTest {
 
         assertThat(archive, equalTo(Archive.Pride.name()));
 
+    }
+
+    @Test
+    public void givenSeqVarAnalysis_assignENA() {
+        String archive = extractArchive(analysis);
+
+        assertThat(archive, equalTo(Archive.Ena.name()));
     }
 
     private String extractArchive(StoredSubmittable storedSubmittable) {
@@ -117,6 +129,23 @@ public class ArchiveAssignmentTest {
 
     }
 
+    public Analysis createSeqVarAnalysis(String alias, Submission submission, Study study, Sample sample){
+        Analysis a = new Analysis();
+        a.setAlias(alias);
+        a.setSubmission(submission);
+
+        submittableHelperService.uuidAndTeamFromSubmissionSetUp(a);
+        submittableHelperService.processingStatusAndValidationResultSetUp(a);
+        a.setSampleRefs(Arrays.asList((SampleRef) sample.asRef()));
+        a.setStudyRefs(Arrays.asList((StudyRef)study.asRef()));
+
+        a.setAnalysisType("sequence variation");
+
+        analysisRepository.save(a);
+
+        return a;
+    }
+
     public Project createProject(String alias, Submission submission) {
         Project project = new Project();
         project.setAlias(alias);
@@ -150,6 +179,9 @@ public class ArchiveAssignmentTest {
 
     @Autowired
     private ProjectRepository projectRepository;
+
+    @Autowired
+    private AnalysisRepository analysisRepository;
 
 
 }
