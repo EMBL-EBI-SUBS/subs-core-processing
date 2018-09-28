@@ -17,6 +17,7 @@ import uk.ac.ebi.subs.repository.model.Sample;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Study;
 import uk.ac.ebi.subs.repository.model.Submission;
+import uk.ac.ebi.subs.repository.repos.DataTypeRepository;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.fileupload.FileRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
@@ -31,6 +32,8 @@ import uk.ac.ebi.subs.repository.services.SubmittableHelperService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+
+import static uk.ac.ebi.subs.processing.utils.DataTypeBuilder.buildDataType;
 
 /**
  * Created by davidr on 07/07/2017.
@@ -48,26 +51,23 @@ public class DispatchTestSubmissionSetup {
     private AnalysisRepository analysisRepository;
     private ProcessingStatusRepository processingStatusRepository;
     private FileRepository fileRepository;
+    private DataTypeRepository dataTypeRepository;
 
     private Team team = Team.build("tester1");
     private Submitter submitter = Submitter.build("alice@test.ac.uk");
 
-    public DispatchTestSubmissionSetup(SubmissionRepository submissionRepository, SubmissionHelperService submissionHelperService,
-                                       SubmittableHelperService submittableHelperService, SampleRepository sampleRepository,
-                                       StudyRepository studyRepository, AssayRepository assayRepository,
-                                       ProcessingStatusRepository processingStatusRepository,
-                                       AssayDataRepository assayDataRepository, FileRepository fileRepository, AnalysisRepository analysisRepository) {
+    public DispatchTestSubmissionSetup(SubmissionRepository submissionRepository, SubmissionHelperService submissionHelperService, SubmittableHelperService submittableHelperService, SampleRepository sampleRepository, StudyRepository studyRepository, AssayRepository assayRepository, AssayDataRepository assayDataRepository, AnalysisRepository analysisRepository, ProcessingStatusRepository processingStatusRepository, FileRepository fileRepository, DataTypeRepository dataTypeRepository) {
         this.submissionRepository = submissionRepository;
+        this.submissionHelperService = submissionHelperService;
+        this.submittableHelperService = submittableHelperService;
         this.sampleRepository = sampleRepository;
         this.studyRepository = studyRepository;
         this.assayRepository = assayRepository;
         this.assayDataRepository = assayDataRepository;
-        this.fileRepository = fileRepository;
-        this.processingStatusRepository = processingStatusRepository;
         this.analysisRepository = analysisRepository;
-        this.submissionHelperService = submissionHelperService;
-        this.submittableHelperService = submittableHelperService;
-
+        this.processingStatusRepository = processingStatusRepository;
+        this.fileRepository = fileRepository;
+        this.dataTypeRepository = dataTypeRepository;
     }
 
     public void clearRepos() {
@@ -79,7 +79,8 @@ public class DispatchTestSubmissionSetup {
                 assayDataRepository,
                 fileRepository,
                 processingStatusRepository,
-                analysisRepository
+                analysisRepository,
+                dataTypeRepository
         ).forEach(
                 CrudRepository::deleteAll
         );
@@ -93,6 +94,7 @@ public class DispatchTestSubmissionSetup {
         Sample s = new Sample();
         s.setAlias(alias);
         s.setSubmission(submission);
+        s.setDataType(buildDataType(Archive.BioSamples, dataTypeRepository));
         submittableHelperService.setupNewSubmittable(s);
         setArchive(s, Archive.BioSamples);
         sampleRepository.save(s);
@@ -104,6 +106,7 @@ public class DispatchTestSubmissionSetup {
         s.setAlias(alias);
         s.setSubmission(submission);
         s.setProjectRef(null);
+        s.setDataType(buildDataType(Archive.Ena, dataTypeRepository));
         submittableHelperService.setupNewSubmittable(s);
         setArchive(s, Archive.Ena);
         studyRepository.save(s);
@@ -114,7 +117,7 @@ public class DispatchTestSubmissionSetup {
         Assay a = new Assay();
         a.setAlias(alias);
         a.setSubmission(submission);
-
+        a.setDataType(buildDataType(Archive.Ena, dataTypeRepository));
         submittableHelperService.setupNewSubmittable(a);
         setArchive(a, Archive.Ena);
         a.setStudyRef((StudyRef) study.asRef());
@@ -128,7 +131,7 @@ public class DispatchTestSubmissionSetup {
         AssayData assayData = new AssayData();
         assayData.setAlias(alias);
         assayData.setSubmission(submission);
-
+        assayData.setDataType(buildDataType(Archive.Ena, dataTypeRepository));
         submittableHelperService.setupNewSubmittable(assayData);
         setArchive(assayData, Archive.Ena);
 
@@ -143,7 +146,7 @@ public class DispatchTestSubmissionSetup {
     Analysis createAnalysisWithNbOfFiles(String alias, Submission submission, int nbOfFiles) {
         Analysis analysis = new Analysis();
         analysis.setAlias(alias);
-
+        analysis.setDataType(buildDataType(Archive.Ena,dataTypeRepository));
         analysis.setSubmission(submission);
 
         submittableHelperService.setupNewSubmittable(analysis);

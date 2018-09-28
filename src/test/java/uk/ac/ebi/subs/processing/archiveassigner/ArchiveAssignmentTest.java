@@ -1,15 +1,30 @@
 package uk.ac.ebi.subs.processing.archiveassigner;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import uk.ac.ebi.subs.CoreProcessingApp;
-import uk.ac.ebi.subs.data.component.*;
+import uk.ac.ebi.subs.data.component.Archive;
+import uk.ac.ebi.subs.data.component.SampleRef;
+import uk.ac.ebi.subs.data.component.StudyRef;
+import uk.ac.ebi.subs.data.component.Submitter;
+import uk.ac.ebi.subs.data.component.Team;
 import uk.ac.ebi.subs.processing.archiveassignment.SubmissionArchiveAssignmentService;
-import uk.ac.ebi.subs.repository.model.*;
+import uk.ac.ebi.subs.repository.model.Analysis;
+import uk.ac.ebi.subs.repository.model.Assay;
+import uk.ac.ebi.subs.repository.model.DataType;
+import uk.ac.ebi.subs.repository.model.ProcessingStatus;
+import uk.ac.ebi.subs.repository.model.Project;
+import uk.ac.ebi.subs.repository.model.Sample;
+import uk.ac.ebi.subs.repository.model.StoredSubmittable;
+import uk.ac.ebi.subs.repository.model.Study;
+import uk.ac.ebi.subs.repository.model.Submission;
+import uk.ac.ebi.subs.repository.repos.DataTypeRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.AnalysisRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.AssayRepository;
@@ -20,9 +35,12 @@ import uk.ac.ebi.subs.repository.services.SubmissionHelperService;
 import uk.ac.ebi.subs.repository.services.SubmittableHelperService;
 
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+
+import static uk.ac.ebi.subs.processing.utils.DataTypeBuilder.buildDataType;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CoreProcessingApp.class)
@@ -35,19 +53,47 @@ public class ArchiveAssignmentTest {
     private Project project;
     private Analysis analysis;
 
+    private DataType proteomicsStudyType;
+    private DataType sampleType;
+    private DataType enaType;
+    private DataType projectType;
+
     @Autowired
     private SubmissionArchiveAssignmentService submissionArchiveAssignmentService;
 
+    @Autowired
+    private DataTypeRepository dataTypeRepository;
+
+
     @Before
     public void setUp() {
+        tearDown();
         Submission submission = submissionHelperService.createSubmission(team, submitter);
+        proteomicsStudyType = buildDataType(Archive.Pride, dataTypeRepository);
+        sampleType = buildDataType(Archive.BioSamples, dataTypeRepository);
+        enaType = buildDataType(Archive.Ena, dataTypeRepository);
+        projectType = buildDataType(Archive.BioStudies, dataTypeRepository);
+
         project = createProject("testProject", submission);
         sample = createSample("testSample", submission);
-        study = createStudy("testStudy", submission, StudyDataType.Proteomics);
+        study = createStudy("testStudy", submission, proteomicsStudyType);
         assay = createAssay("testAssay", submission, sample, study);
         analysis = createSeqVarAnalysis("testAnalysis", submission, study, sample);
         submissionArchiveAssignmentService.assignArchives(submission);
     }
+
+    @After
+    public void tearDown() {
+        Stream.of(
+                studyRepository,
+                sampleRepository,
+                assayRepository,
+                processingStatusRepository,
+                projectRepository,
+                analysisRepository,
+                dataTypeRepository).forEach(MongoRepository::deleteAll);
+    }
+
 
     @Test
     public void givenSample_assignBioSamples() {
@@ -57,10 +103,10 @@ public class ArchiveAssignmentTest {
     }
 
     @Test
-    public void givenProject_assignBioStudies(){
+    public void givenProject_assignBioStudies() {
         String archive = extractArchive(project);
 
-        assertThat(archive,equalTo(Archive.BioStudies.name()));
+        assertThat(archive, equalTo(Archive.BioStudies.name()));
     }
 
     @Test
@@ -97,18 +143,19 @@ public class ArchiveAssignmentTest {
         Sample s = new Sample();
         s.setAlias(alias);
         s.setSubmission(submission);
+        s.setDataType(sampleType);
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(s);
         submittableHelperService.processingStatusAndValidationResultSetUp(s);
         sampleRepository.save(s);
         return s;
     }
 
-    public Study createStudy(String alias, Submission submission, StudyDataType studyDataType) {
+    public Study createStudy(String alias, Submission submission, DataType studyDataType) {
         Study s = new Study();
         s.setAlias(alias);
         s.setSubmission(submission);
         s.setProjectRef(null);
-        s.setStudyType(studyDataType);
+        s.setDataType(studyDataType);
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(s);
         submittableHelperService.processingStatusAndValidationResultSetUp(s);
         studyRepository.save(s);
@@ -119,6 +166,7 @@ public class ArchiveAssignmentTest {
         Assay a = new Assay();
         a.setAlias(alias);
         a.setSubmission(submission);
+        a.setDataType(study.getDataType());
 
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(a);
         submittableHelperService.processingStatusAndValidationResultSetUp(a);
@@ -129,17 +177,17 @@ public class ArchiveAssignmentTest {
 
     }
 
-    public Analysis createSeqVarAnalysis(String alias, Submission submission, Study study, Sample sample){
+    public Analysis createSeqVarAnalysis(String alias, Submission submission, Study study, Sample sample) {
         Analysis a = new Analysis();
         a.setAlias(alias);
         a.setSubmission(submission);
+        a.setDataType(enaType);
 
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(a);
         submittableHelperService.processingStatusAndValidationResultSetUp(a);
         a.setSampleRefs(Arrays.asList((SampleRef) sample.asRef()));
-        a.setStudyRefs(Arrays.asList((StudyRef)study.asRef()));
+        a.setStudyRefs(Arrays.asList((StudyRef) study.asRef()));
 
-        a.setAnalysisType("sequence variation");
 
         analysisRepository.save(a);
 
@@ -150,6 +198,7 @@ public class ArchiveAssignmentTest {
         Project project = new Project();
         project.setAlias(alias);
         project.setSubmission(submission);
+        project.setDataType(projectType);
 
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(project);
         submittableHelperService.processingStatusAndValidationResultSetUp(project);
