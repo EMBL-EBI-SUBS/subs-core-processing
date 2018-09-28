@@ -9,12 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import uk.ac.ebi.subs.CoreProcessingApp;
+import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.data.component.Team;
 import uk.ac.ebi.subs.processing.utils.MongoDBDependentTest;
+import uk.ac.ebi.subs.repository.model.DataType;
 import uk.ac.ebi.subs.repository.model.Sample;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Study;
 import uk.ac.ebi.subs.repository.model.Submission;
+import uk.ac.ebi.subs.repository.repos.DataTypeRepository;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.StudyRepository;
@@ -26,6 +29,7 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
+import static uk.ac.ebi.subs.processing.utils.DataTypeBuilder.buildDataType;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Category(MongoDBDependentTest.class)
@@ -41,6 +45,9 @@ public class SubmissionEnvelopeServiceTest {
     private StudyRepository studyRepository;
     @Autowired
     private SampleRepository sampleRepository;
+
+    @Autowired
+    private DataTypeRepository dataTypeRepository;
 
     @Autowired
     private SubmittableHelperService submittableHelperService;
@@ -59,7 +66,7 @@ public class SubmissionEnvelopeServiceTest {
 
 
     private void clearDbs() {
-        Stream.of(studyRepository, sampleRepository, submissionRepository).forEach(repo -> repo.deleteAll());
+        Stream.of(studyRepository, sampleRepository, submissionRepository, dataTypeRepository).forEach(repo -> repo.deleteAll());
     }
 
     @Before
@@ -75,6 +82,7 @@ public class SubmissionEnvelopeServiceTest {
         study = new Study();
         study.setSubmission(submission);
         study.setAlias("study");
+        study.setDataType(buildDataType(Archive.Ena,dataTypeRepository));
         submittableHelperService.setupNewSubmittable(study);
         studyRepository.save(study);
 
@@ -82,6 +90,7 @@ public class SubmissionEnvelopeServiceTest {
         sample = new Sample();
         sample.setSubmission(submission);
         sample.setAlias("sample");
+        sample.setDataType(buildDataType(Archive.BioSamples,dataTypeRepository));
         submittableHelperService.setupNewSubmittable(sample);
         sampleRepository.save(sample);
     }
@@ -90,5 +99,7 @@ public class SubmissionEnvelopeServiceTest {
     public void tearDown() {
         clearDbs();
     }
+
+
 
 }
