@@ -8,6 +8,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import uk.ac.ebi.subs.messaging.Queues;
 
+/**
+ * This configuration class responsible for the RabbitMQ configuration for the API support operations.
+ */
 @Configuration
 public class ApiSupportQueueConfig {
 

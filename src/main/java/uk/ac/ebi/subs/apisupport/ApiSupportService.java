@@ -17,6 +17,9 @@ import uk.ac.ebi.subs.validator.repository.ValidationResultRepository;
 
 import java.util.List;
 
+/**
+ * This is a Spring @Service component for {@link Submission} entity.
+ */
 @Service
 public class ApiSupportService {
 
