@@ -9,6 +9,9 @@ import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.repository.model.Submission;
 
+/**
+ * This Spring component contains listeners related to {@link Submission} assign to archives operation.
+ */
 @Component
 public class Listener {
 
