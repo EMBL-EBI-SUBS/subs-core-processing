@@ -18,7 +18,8 @@ import uk.ac.ebi.subs.validator.repository.ValidationResultRepository;
 import java.util.List;
 
 /**
- * This is a Spring @Service component for {@link Submission} entity.
+ * This is a Spring @Service component for dealing with works after deleted a {@link Submission} entity
+ * or marks submission contents as Submitted.
  */
 @Service
 public class ApiSupportService {
