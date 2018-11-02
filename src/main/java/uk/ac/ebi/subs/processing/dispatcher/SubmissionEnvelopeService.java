@@ -22,6 +22,10 @@ import uk.ac.ebi.subs.repository.repos.submittables.StudyRepository;
 
 import java.util.stream.Stream;
 
+/**
+ * This is a Spring @Service component for {@link Submission} entity gathering the items of a submission
+ * to an container object (envelope).
+ */
 @Service
 public class SubmissionEnvelopeService {
 

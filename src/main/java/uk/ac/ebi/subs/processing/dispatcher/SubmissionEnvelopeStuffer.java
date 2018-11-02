@@ -9,6 +9,8 @@ import uk.ac.ebi.subs.repository.model.*;
 import java.util.Collection;
 
 /**
+ * This helper service function is to add a submittable class to a {@link SubmissionEnvelope}.
+ *
  * Created by davidr on 17/07/2017.
  */
 @Component
@@ -63,13 +65,10 @@ public class SubmissionEnvelopeStuffer {
         if (clazz == Study.class) {
             this.add(submissionEnvelope, (Study) storedSubmittable);
         }
-
-
     }
 
     public void add(SubmissionEnvelope submissionEnvelope, Analysis submittable) {
         submissionEnvelope.getAnalyses().add(submittable);
-
     }
 
     public void add(SubmissionEnvelope submissionEnvelope, Assay submittable) {
@@ -111,6 +110,4 @@ public class SubmissionEnvelopeStuffer {
     public void add(SubmissionEnvelope submissionEnvelope, Study submittable) {
         submissionEnvelope.getStudies().add(submittable);
     }
-
-
 }
