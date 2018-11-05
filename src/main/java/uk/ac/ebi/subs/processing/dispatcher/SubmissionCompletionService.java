@@ -1,6 +1,6 @@
 package uk.ac.ebi.subs.processing.dispatcher;
 
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
 import uk.ac.ebi.subs.repository.model.Submission;
@@ -10,7 +10,10 @@ import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
 import java.util.Map;
 
-@Component
+/**
+ * This is a Spring @Service component for {@link Submission} entity, that is dealing with {@link Submission} completion.
+ */
+@Service
 public class SubmissionCompletionService {
 
     private ProcessingStatusRepository processingStatusRepository;

@@ -11,11 +11,14 @@ import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 
+/**
+ * This is a Spring @Service component for the {@link Submission} entity to assign the {@link ProcessingStatus} for each
+ * submittable item to the submittable's archive.
+ */
 @Service
 public class SubmissionArchiveAssignmentService {
 
     private static final Logger logger = LoggerFactory.getLogger(SubmissionArchiveAssignmentService.class);
-
 
     private SubmissionEnvelopeService submissionEnvelopeService;
     private ProcessingStatusRepository processingStatusRepository;
@@ -30,7 +33,7 @@ public class SubmissionArchiveAssignmentService {
 
         submissionEnvelopeService.submissionContents(submission.getId())
                 .forEach(storedSubmittable -> {
-                    DataType dataType = ((StoredSubmittable) storedSubmittable).getDataType();
+                    DataType dataType = storedSubmittable.getDataType();
                     Archive archive = dataType.getArchive();
 
                     ProcessingStatus processingStatus = storedSubmittable.getProcessingStatus();
@@ -38,5 +41,4 @@ public class SubmissionArchiveAssignmentService {
                     processingStatusRepository.save(processingStatus);
                 });
     }
-
 }
