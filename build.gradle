@@ -1,5 +1,5 @@
 group 'uk.ac.ebi.subs'
-version '2.5.2-SNAPSHOT'
+version '2.5.3-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'groovy'
@@ -40,6 +40,7 @@ dependencies {
     compile 'com.auth0:java-jwt:3.2.0'
     compile ("org.springframework.hateoas:spring-hateoas:0.23.0.RELEASE") // for traverson
     compile ("com.mashape.unirest:unirest-java:1.4.9")
+    compile("de.siegmar:logback-gelf:1.1.0")
 
     testCompile("junit:junit")
     testCompile("org.springframework.boot:spring-boot-starter-test")
