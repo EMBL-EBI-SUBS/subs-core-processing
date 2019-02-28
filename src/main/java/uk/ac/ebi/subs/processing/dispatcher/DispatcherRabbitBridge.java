@@ -85,7 +85,7 @@ public class DispatcherRabbitBridge {
      * @param submission
      */
     @RabbitListener(queues = Queues.SUBMISSION_DISPATCHER)
-    public void dispatchToArchives(Submission submission) {
+    public void dispatchToArchives(Submission submission) throws InterruptedException {
 
         logger.debug("dispatchToArchives {}", submission);
 
@@ -117,15 +117,16 @@ public class DispatcherRabbitBridge {
 
             String targetTopic = archiveTopic.get(archive);
 
+            dispatcherService.updateSubmittablesStatusToSubmitted(archive, submissionEnvelopeToTransmit);
+
+            Thread.sleep(10000);
+
             dispatcherService.insertReferencedSamples(submissionEnvelopeToTransmit);
 
             dispatcherService.insertUploadedFiles(submissionEnvelopeToTransmit);
 
-
             rabbitMessagingTemplate.convertAndSend(Exchanges.SUBMISSIONS, targetTopic, submissionEnvelopeToTransmit);
-            logger.debug("sent submission {} to {}", submission.getId(), targetTopic);
-
-            dispatcherService.updateSubmittablesStatusToSubmitted(archive, submissionEnvelopeToTransmit);
+            logger.info("sent submission {} to {}", submission.getId(), targetTopic);
         }
     }
 }
