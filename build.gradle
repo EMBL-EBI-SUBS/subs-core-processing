@@ -1,5 +1,5 @@
 group 'uk.ac.ebi.subs'
-version '2.5.4-SNAPSHOT'
+version '2.6.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'groovy'
@@ -28,9 +28,9 @@ repositories {
 }
 
 dependencies {
-    compile("uk.ac.ebi.subs:subs-processing-model:2.5.0-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-processing-model:2.7.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:0.4.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-repository:2.22.2-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-repository:2.25.0-SNAPSHOT")
 
     compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
     compile("org.springframework.boot:spring-boot-starter-hateoas")
