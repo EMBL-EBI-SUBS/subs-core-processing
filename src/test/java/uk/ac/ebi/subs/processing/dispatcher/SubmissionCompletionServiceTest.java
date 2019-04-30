@@ -10,6 +10,7 @@ import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
 import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.model.SubmissionStatus;
+import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
@@ -23,6 +24,7 @@ public class SubmissionCompletionServiceTest {
 
     private ProcessingStatusRepository mockProcessingStatusRepository;
     private SubmissionStatusRepository mockSubmissionStatusRepository;
+    private SubmissionRepository mockSubmissionRepository;
 
     private Submission submission;
     private SubmissionStatus submissionStatus;
@@ -38,10 +40,12 @@ public class SubmissionCompletionServiceTest {
 
         mockProcessingStatusRepository = Mockito.mock(ProcessingStatusRepository.class);
         mockSubmissionStatusRepository = Mockito.mock(SubmissionStatusRepository.class);
+        mockSubmissionRepository = Mockito.mock(SubmissionRepository.class);
 
         submissionCompletionService = new SubmissionCompletionService(
                 mockProcessingStatusRepository,
-                mockSubmissionStatusRepository
+                mockSubmissionStatusRepository,
+                mockSubmissionRepository
         );
 
         statusSummary = new HashMap<>();
@@ -54,7 +58,7 @@ public class SubmissionCompletionServiceTest {
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
 
-        Assert.assertTrue(submissionCompletionService.allSubmittablesCompleted(submission));
+        Assert.assertTrue(submissionCompletionService.allSubmittablesCompleted(submission.getId()));
     }
 
     @Test
@@ -64,7 +68,7 @@ public class SubmissionCompletionServiceTest {
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
 
-        Assert.assertFalse(submissionCompletionService.allSubmittablesCompleted(submission));
+        Assert.assertFalse(submissionCompletionService.allSubmittablesCompleted(submission.getId()));
     }
 
     @Test
@@ -75,12 +79,15 @@ public class SubmissionCompletionServiceTest {
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
 
-        Assert.assertFalse(submissionCompletionService.allSubmittablesCompleted(submission));
+        Assert.assertFalse(submissionCompletionService.allSubmittablesCompleted(submission.getId()));
     }
 
     @Test
     public void submission_marked_as_completed(){
-        submissionCompletionService.markSubmissionAsCompleted(submission);
+        Mockito.when(mockSubmissionRepository.findOne(submission.getId()))
+                .thenReturn(submission);
+
+        submissionCompletionService.markSubmissionAsCompleted(submission.getId());
 
         Mockito.verify(mockSubmissionStatusRepository).save(submissionStatus);
         Assert.assertEquals(SubmissionStatusEnum.Completed.name(),submissionStatus.getStatus());

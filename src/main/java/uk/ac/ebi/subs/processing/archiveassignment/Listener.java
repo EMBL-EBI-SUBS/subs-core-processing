@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Topics;
+import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.model.Submission;
 
 /**
@@ -21,17 +22,18 @@ public class Listener {
     private SubmissionArchiveAssignmentService submissionArchiveAssignmentService;
 
     @RabbitListener(queues = QueueConfig.SUBMISSION_ARCHIVE_ASSIGNMENT)
-    public void assignArchives(Submission submission) {
+    public void assignArchives(SubmissionEnvelope submissionEnvelope) {
+        final uk.ac.ebi.subs.data.Submission submission = submissionEnvelope.getSubmission();
         logger.info("assign archives {}", submission);
 
-        submissionArchiveAssignmentService.assignArchives(submission);
+        submissionArchiveAssignmentService.assignArchives(submission.getId());
 
         logger.info("archives assigned {}", submission);
 
         rabbitMessagingTemplate.convertAndSend(
                 Exchanges.SUBMISSIONS,
                 Topics.EVENT_SUBMISSION_PROCESSING_UPDATED,
-                submission
+                submissionEnvelope
         );
     }
 
