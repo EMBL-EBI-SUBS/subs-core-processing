@@ -7,7 +7,6 @@ import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.processing.dispatcher.SubmissionEnvelopeService;
 import uk.ac.ebi.subs.repository.model.DataType;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
-import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 
@@ -28,10 +27,10 @@ public class SubmissionArchiveAssignmentService {
         this.processingStatusRepository = processingStatusRepository;
     }
 
-    public void assignArchives(Submission submission) {
-        logger.info("assigning archives for submission {}", submission);
+    public void assignArchives(String submissionId) {
+        logger.info("assigning archives for submission {}", submissionId);
 
-        submissionEnvelopeService.submissionContents(submission.getId())
+        submissionEnvelopeService.submissionContents(submissionId)
                 .forEach(storedSubmittable -> {
                     DataType dataType = storedSubmittable.getDataType();
                     Archive archive = dataType.getArchive();
