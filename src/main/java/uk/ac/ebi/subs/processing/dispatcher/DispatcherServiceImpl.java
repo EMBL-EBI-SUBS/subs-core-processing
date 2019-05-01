@@ -54,16 +54,17 @@ public class DispatcherServiceImpl implements DispatcherService {
      * If any of the submittables for an archive are not ready for dispatch, don't send anything to that archive
      *
      */
-    public Map<Archive, SubmissionEnvelope> assessDispatchReadiness(final Submission submission) {
+    public Map<Archive, SubmissionEnvelope> assessDispatchReadiness(final Submission submission, final String jwtToken) {
+        final String submissionId = submission.getId();
         Map<String, Set<String>> typesAndIdsToConsider = processingStatusRepository
-                .summariseSubmissionTypesWithSubmittableIds(submission.getId(), processingStatusesToAllow);
+                .summariseSubmissionTypesWithSubmittableIds(submissionId, processingStatusesToAllow);
 
 
         Map<Archive, SubmissionEnvelope> readyForDispatch = new HashMap<>();
 
-        logger.info("Submission {} has data to process {}", submission.getId(), typesAndIdsToConsider.keySet());
+        logger.info("Submission {} has data to process {}", submissionId, typesAndIdsToConsider.keySet());
         for (Map.Entry<String, Set<String>> typeAndIds : typesAndIdsToConsider.entrySet()) {
-            logger.info("Submission {} has data to process for {}: {}", submission.getId(), typeAndIds.getKey(), typeAndIds.getValue().size());
+            logger.info("Submission {} has data to process for {}: {}", submissionId, typeAndIds.getKey(), typeAndIds.getValue().size());
         }
 
         Set<Archive> archivesToBlock = new HashSet<>();
@@ -81,13 +82,12 @@ public class DispatcherServiceImpl implements DispatcherService {
                     StoredSubmittable submittable = submittableRepository.findOne(submittableId);
                     Archive archive = Archive.valueOf(submittable.getProcessingStatus().getArchive());
 
-
                     List<StoredSubmittable> referencedSubmittables = submittable
                             .refs()
                             .filter(Objects::nonNull)
                             .filter(ref -> ref.getAlias() != null || ref.getAccession() != null) //TODO this is because of empty refs as defaults
                             .map(ref -> lookupRefAndFillInAccession(refLookupCache, ref) )
-                            .filter(referencedSubmittable -> !isForSameArchiveAndInSameSubmission(submission, archive, referencedSubmittable))
+                            .filter(referencedSubmittable -> !isForSameArchiveAndInSameSubmission(submissionId, archive, referencedSubmittable))
                             .collect(Collectors.toList());
 
                     Optional<StoredSubmittable> optionalBlockingSubmittable = referencedSubmittables.stream()
@@ -100,7 +100,7 @@ public class DispatcherServiceImpl implements DispatcherService {
                                 submission,
                                 readyForDispatch
                         );
-
+                        submissionEnvelope.setJWTToken(jwtToken);
 
                         submissionEnvelopeStuffer.add(submissionEnvelope, submittable);
                         submissionEnvelopeStuffer.addAll(submissionEnvelope, referencedSubmittables);
@@ -110,8 +110,6 @@ public class DispatcherServiceImpl implements DispatcherService {
                         archivesToBlock.add(archive);
                     }
                 }
-
-
             }
         }
 
@@ -136,12 +134,12 @@ public class DispatcherServiceImpl implements DispatcherService {
         return ss;
     }
 
-    private boolean isForSameArchiveAndInSameSubmission(Submission submission, Archive archive, StoredSubmittable sub) {
+    private boolean isForSameArchiveAndInSameSubmission(String submissionId, Archive archive, StoredSubmittable sub) {
         Assert.notNull(sub.getSubmission().getId());
-        Assert.notNull(submission.getId());
+        Assert.notNull(submissionId);
         Assert.notNull(sub.getProcessingStatus().getArchive());
         Assert.notNull(archive);
-        return sub.getSubmission().getId().equals(submission.getId())
+        return sub.getSubmission().getId().equals(submissionId)
                 && sub.getProcessingStatus().getArchive().equals(archive.name());
     }
 

@@ -79,7 +79,7 @@ public class ArchiveAssignmentTest {
         study = createStudy("testStudy", submission, proteomicsStudyType);
         assay = createAssay("testAssay", submission, sample, study);
         analysis = createSeqVarAnalysis("testAnalysis", submission, study, sample);
-        submissionArchiveAssignmentService.assignArchives(submission);
+        submissionArchiveAssignmentService.assignArchives(submission.getId());
     }
 
     @After

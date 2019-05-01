@@ -7,15 +7,11 @@ import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.component.Archive;
-import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
-import uk.ac.ebi.subs.processing.archiveassignment.SubmissionArchiveAssignmentService;
 import uk.ac.ebi.subs.repository.model.Submission;
-import uk.ac.ebi.subs.repository.model.SubmissionStatus;
-import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -82,22 +78,25 @@ public class DispatcherRabbitBridge {
      * For a submission, assess which archives can be sent information for archiving. Send them the information
      * as a message
      *
-     * @param submission
+     * @param submissionEnvelope
      */
     @RabbitListener(queues = Queues.SUBMISSION_DISPATCHER)
-    public void dispatchToArchives(Submission submission) throws InterruptedException {
-
+    public void dispatchToArchives(SubmissionEnvelope submissionEnvelope) throws InterruptedException {
+        uk.ac.ebi.subs.data.Submission submission = submissionEnvelope.getSubmission();
         logger.debug("dispatchToArchives {}", submission);
 
-        if (submissionCompletionService.allSubmittablesCompleted(submission)){
-            submissionCompletionService.markSubmissionAsCompleted(submission);
+        final String submissionId = submission.getId();
+
+        if (submissionCompletionService.allSubmittablesCompleted(submissionId)){
+            submissionCompletionService.markSubmissionAsCompleted(submissionId);
             logger.debug("submission completed {}", submission);
             return;
         }
 
+        String jwtToken = submissionEnvelope.getJWTToken();
 
         Map<Archive, SubmissionEnvelope> readyToDispatch = dispatcherService
-                .assessDispatchReadiness(submission);
+                .assessDispatchReadiness(submission, jwtToken);
 
         Map<Archive, String> archiveTopic = new HashMap<>();
         archiveTopic.put(Archive.BioSamples, Topics.SAMPLES_PROCESSING);
@@ -112,7 +111,7 @@ public class DispatcherRabbitBridge {
             SubmissionEnvelope submissionEnvelopeToTransmit = entry.getValue();
 
             if (!archiveTopic.containsKey(archive)) {
-                throw new IllegalStateException("Dispatcher does not have topic mapping for archive " + archive + ". Processing submission " + submission.getId());
+                throw new IllegalStateException("Dispatcher does not have topic mapping for archive " + archive + ". Processing submission " + submissionId);
             }
 
             String targetTopic = archiveTopic.get(archive);
@@ -126,7 +125,7 @@ public class DispatcherRabbitBridge {
             dispatcherService.insertUploadedFiles(submissionEnvelopeToTransmit);
 
             rabbitMessagingTemplate.convertAndSend(Exchanges.SUBMISSIONS, targetTopic, submissionEnvelopeToTransmit);
-            logger.info("sent submission {} to {}", submission.getId(), targetTopic);
+            logger.info("sent submission {} to {}", submissionId, targetTopic);
         }
     }
 }

@@ -11,7 +11,7 @@ import java.util.Map;
  */
 public interface DispatcherService {
 
-    Map<Archive, SubmissionEnvelope> assessDispatchReadiness(Submission submission);
+    Map<Archive, SubmissionEnvelope> assessDispatchReadiness(Submission submission, String jwtToken);
 
     Map<Archive, SubmissionEnvelope> determineSupportingInformationRequired(Submission submission);
 

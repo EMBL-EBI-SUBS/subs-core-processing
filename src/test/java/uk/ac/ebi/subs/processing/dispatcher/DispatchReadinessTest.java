@@ -14,7 +14,12 @@ import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.processing.utils.MongoDBDependentTest;
-import uk.ac.ebi.subs.repository.model.*;
+import uk.ac.ebi.subs.repository.model.Assay;
+import uk.ac.ebi.subs.repository.model.ProcessingStatus;
+import uk.ac.ebi.subs.repository.model.Sample;
+import uk.ac.ebi.subs.repository.model.StoredSubmittable;
+import uk.ac.ebi.subs.repository.model.Study;
+import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 
@@ -54,6 +59,7 @@ public class DispatchReadinessTest {
     private List<Assay> assays;
     private List<Sample> samples;
     private static final int SAMPLE_AND_ASSAY_COUNT = 10;
+    private static String JWT_TOKEN = "testTokenText";
 
 
     @Before
@@ -111,7 +117,7 @@ public class DispatchReadinessTest {
 
         stopWatch.start("sample dispatch test");
 
-        Map<Archive, SubmissionEnvelope> dispatcherOutput = dispatcherService.assessDispatchReadiness(submission);
+        Map<Archive, SubmissionEnvelope> dispatcherOutput = dispatcherService.assessDispatchReadiness(submission, JWT_TOKEN);
 
         stopWatch.stop();
         System.out.println(stopWatch.prettyPrint());
@@ -136,7 +142,7 @@ public class DispatchReadinessTest {
 
         stopWatch.start("assay archive dispatch test");
 
-        Map<Archive, SubmissionEnvelope> dispatcherOutput = dispatcherService.assessDispatchReadiness(submission);
+        Map<Archive, SubmissionEnvelope> dispatcherOutput = dispatcherService.assessDispatchReadiness(submission, JWT_TOKEN);
 
         stopWatch.stop();
         System.out.println(stopWatch.prettyPrint());
