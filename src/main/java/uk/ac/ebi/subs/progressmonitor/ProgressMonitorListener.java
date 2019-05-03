@@ -34,29 +34,31 @@ public class ProgressMonitorListener {
     public void storeSupportingInformation(SubmissionEnvelope submissionEnvelope) {
         monitorService.storeSupportingInformation(submissionEnvelope);
 
-        sendSubmissionUpdated(submissionEnvelope.getSubmission().getId());
+        sendSubmissionUpdated(submissionEnvelope.getSubmission().getId(), submissionEnvelope.getJWTToken());
     }
 
     @RabbitListener(queues = Queues.SUBMISSION_MONITOR)
     public void updateSubmittablesFromCertificates(ProcessingCertificateEnvelope processingCertificateEnvelope) {
         monitorService.updateSubmittablesFromCertificates(processingCertificateEnvelope);
 
-        sendSubmissionUpdated(processingCertificateEnvelope.getSubmissionId());
+        sendSubmissionUpdated(processingCertificateEnvelope.getSubmissionId(), processingCertificateEnvelope.getJWTToken());
     }
 
     /**
-     * Submission or it's supporting information has been updated
+     * Submission or its supporting information has been updated
      * <p>
      * Recreate the submission envelope from storage and send it as a message
      *
      * @param submissionId
      */
-    private void sendSubmissionUpdated(String submissionId) {
+    private void sendSubmissionUpdated(String submissionId, String jwtToken) {
+        SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(submissionRepository.findOne(submissionId));
+        submissionEnvelope.setJWTToken(jwtToken);
 
         rabbitMessagingTemplate.convertAndSend(
                 Exchanges.SUBMISSIONS,
                 Topics.EVENT_SUBMISSION_PROCESSING_UPDATED,
-                submissionRepository.findOne(submissionId)
+                submissionEnvelope
         );
 
         logger.info("submission {} update message sent", submissionId);
