@@ -72,13 +72,8 @@ public class UpdateSubmittablesStatusToSubmittedTest {
             }
 
             assertThat(processingStatus.getStatus(), equalTo(expectedStatus.name()));
-
-
         }
-
-
     }
-
 
     @Before
     public void buildUp() {
