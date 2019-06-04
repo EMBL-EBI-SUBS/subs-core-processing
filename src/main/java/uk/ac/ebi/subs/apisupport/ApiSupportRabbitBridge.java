@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.messaging.Queues;
+import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.model.Submission;
 
 /**
@@ -39,10 +40,12 @@ public class ApiSupportRabbitBridge {
     /**
      * Once a submission has been submitted, change the processing status of its submittables from 'draft' to 'submitted'.
      *
-     * @param submission the {@link Submission} entity
+     * @param submissionEnvelope this envelope (wrapper object) contains the {@link Submission} entity
      */
     @RabbitListener(queues = Queues.SUBMISSION_SUBMITTED_MARK_SUBMITTABLES)
-    public void onSubmissionMarkSubmittablesSubmitted(Submission submission) {
+    public void onSubmissionMarkSubmittablesSubmitted(SubmissionEnvelope submissionEnvelope) {
+        uk.ac.ebi.subs.data.Submission submission = submissionEnvelope.getSubmission();
+
         logger.info("Marking submittables as submitted for {}",submission.getId());
 
         apiSupportService.markContentsAsSubmitted(submission);

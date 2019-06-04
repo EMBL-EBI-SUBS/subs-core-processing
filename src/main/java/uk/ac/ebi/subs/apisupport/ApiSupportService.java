@@ -26,11 +26,23 @@ public class ApiSupportService {
 
     private static final Logger logger = LoggerFactory.getLogger(ApiSupportService.class);
 
-    @Autowired private List<SubmittableRepository<?>> submissionContentsRepositories;
-    @Autowired private ProcessingStatusRepository processingStatusRepository;
-    @Autowired private SubmissionStatusRepository submissionStatusRepository;
-    @Autowired private SubmissionRepository submissionRepository;
-    @Autowired private ValidationResultRepository validationResultRepository;
+    private final List<SubmittableRepository<?>> submissionContentsRepositories;
+    private final ProcessingStatusRepository processingStatusRepository;
+    private final SubmissionStatusRepository submissionStatusRepository;
+    private final SubmissionRepository submissionRepository;
+    private final ValidationResultRepository validationResultRepository;
+
+    public ApiSupportService(List<SubmittableRepository<?>> submissionContentsRepositories,
+                             ProcessingStatusRepository processingStatusRepository,
+                             SubmissionStatusRepository submissionStatusRepository,
+                             SubmissionRepository submissionRepository,
+                             ValidationResultRepository validationResultRepository) {
+        this.submissionContentsRepositories = submissionContentsRepositories;
+        this.processingStatusRepository = processingStatusRepository;
+        this.submissionStatusRepository = submissionStatusRepository;
+        this.submissionRepository = submissionRepository;
+        this.validationResultRepository = validationResultRepository;
+    }
 
     /**
      * After a submission has been deleted through the API, cleanup its lingering contents
@@ -59,7 +71,7 @@ public class ApiSupportService {
      *
      * @param submission
      */
-    public void markContentsAsSubmitted(Submission submission) {
+    public void markContentsAsSubmitted(uk.ac.ebi.subs.data.Submission submission) {
 
         Submission currentSubmissionState = submissionRepository.findOne(submission.getId());
         if (SubmissionStatusEnum.Draft.name().equals(currentSubmissionState.getSubmissionStatus().getStatus())) {
