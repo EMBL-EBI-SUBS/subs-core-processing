@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.messaging.Exchanges;
+import uk.ac.ebi.subs.processing.AccessionIdEnvelope;
 import uk.ac.ebi.subs.processing.ProcessingCertificate;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.repository.model.accession.AccessionIdWrapper;
@@ -97,13 +98,24 @@ public class AccessionConsumerAndPublisher {
                     && accessionIDWrapper.getBioSamplesAccessionIds().size() > 0
                     && accessionIDWrapper.getBioStudiesAccessionId() != null
                     && !accessionIDWrapper.getBioStudiesAccessionId().isEmpty()) {
-                        rabbitMessagingTemplate.convertAndSend(
+
+                    AccessionIdEnvelope accessionIdEnvelope = createAndPopulateAccessionIdEnvelope(accessionIDWrapper);
+
+                    rabbitMessagingTemplate.convertAndSend(
                                 Exchanges.SUBMISSIONS,
                                 USI_ARCHIVE_ACCESSIONIDS_PUBLISHED_ROUTING_KEY,
-                                accessionIDWrapper
-                        );
+                                accessionIdEnvelope
+                    );
                 }
             }
         );
+    }
+
+    private AccessionIdEnvelope createAndPopulateAccessionIdEnvelope(AccessionIdWrapper accessionIDWrapper) {
+        AccessionIdEnvelope accessionIdEnvelope = new AccessionIdEnvelope();
+        accessionIdEnvelope.setBioSamplesAccessionIds(accessionIDWrapper.getBioSamplesAccessionIds());
+        accessionIdEnvelope.setBioStudiesAccessionId(accessionIDWrapper.getBioStudiesAccessionId());
+
+        return accessionIdEnvelope;
     }
 }

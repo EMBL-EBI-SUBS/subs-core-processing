@@ -92,7 +92,7 @@ public class SubmissionEnvelopeStuffer {
     }
 
     public void add(SubmissionEnvelope submissionEnvelope, Project submittable) {
-        submissionEnvelope.getProjects().add(submittable);
+        submissionEnvelope.setProject(submittable);
     }
 
     public void add(SubmissionEnvelope submissionEnvelope, Protocol submittable) {
