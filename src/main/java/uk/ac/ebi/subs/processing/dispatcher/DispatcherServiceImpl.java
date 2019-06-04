@@ -145,10 +145,10 @@ public class DispatcherServiceImpl implements DispatcherService {
 
 
     @Override
-    public Map<Archive, SubmissionEnvelope> determineSupportingInformationRequired(Submission submission) {
-        SubmissionEnvelope submissionEnvelope = submissionEnvelopeService.fetchOne(submission.getId());
+    public Map<Archive, SubmissionEnvelope> determineSupportingInformationRequired(SubmissionEnvelope submissionEnvelope) {
+        //SubmissionEnvelope submissionEnvelope = submissionEnvelopeService.fetchOne(submission.getId());
 
-        determineSupportingInformationRequired(submissionEnvelope);
+        determineSupportingInformationRequiredForSamples(submissionEnvelope);
 
         if (submissionEnvelope.getSupportingSamplesRequired().isEmpty()) {
             return Collections.emptyMap();
@@ -235,7 +235,7 @@ public class DispatcherServiceImpl implements DispatcherService {
         return uploadedFile;
     }
 
-    public void determineSupportingInformationRequired(SubmissionEnvelope submissionEnvelope) {
+    public void determineSupportingInformationRequiredForSamples(SubmissionEnvelope submissionEnvelope) {
         List<Sample> samples = submissionEnvelope.getSamples();
         List<Assay> assays = submissionEnvelope.getAssays();
         Set<SampleRef> suppportingSamplesRequired = submissionEnvelope.getSupportingSamplesRequired();

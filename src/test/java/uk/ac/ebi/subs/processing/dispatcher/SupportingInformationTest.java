@@ -30,10 +30,12 @@ import static org.junit.Assert.assertThat;
 @Category(MongoDBDependentTest.class)
 @SpringBootTest(classes = CoreProcessingApp.class)
 public class SupportingInformationTest {
-
-
+    
     @Autowired
     DispatcherService dispatcherService;
+
+    @Autowired
+    private SubmissionEnvelopeService submissionEnvelopeService;
 
     @Autowired
     SubmissionRepository submissionRepository;
@@ -82,7 +84,8 @@ public class SupportingInformationTest {
 
     @Test
     public void testSupportingSamples() {
-        Map<Archive, SubmissionEnvelope> requests = dispatcherService.determineSupportingInformationRequired(submission);
+        SubmissionEnvelope submissionEnvelope = submissionEnvelopeService.fetchOne(submission.getId());
+        Map<Archive, SubmissionEnvelope> requests = dispatcherService.determineSupportingInformationRequired(submissionEnvelope);
 
         assertThat(requests.keySet(), hasSize(1));
         assertThat(requests.containsKey(Archive.BioSamples), is(true));
