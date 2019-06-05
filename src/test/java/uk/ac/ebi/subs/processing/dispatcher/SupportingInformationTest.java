@@ -30,7 +30,7 @@ import static org.junit.Assert.assertThat;
 @Category(MongoDBDependentTest.class)
 @SpringBootTest(classes = CoreProcessingApp.class)
 public class SupportingInformationTest {
-    
+
     @Autowired
     DispatcherService dispatcherService;
 
@@ -74,7 +74,6 @@ public class SupportingInformationTest {
         assay.getSampleUses().add(new SampleUse(sampleRef));
 
         assayRepository.save(assay);
-
     }
 
     @After
@@ -95,8 +94,5 @@ public class SupportingInformationTest {
 
         assertThat("supporting info requirement identified ", envelope.getSupportingSamplesRequired(), hasSize(1));
         assertThat("supporting info not filled out yet", envelope.getSupportingSamples(), empty());
-
-
     }
-
 }
