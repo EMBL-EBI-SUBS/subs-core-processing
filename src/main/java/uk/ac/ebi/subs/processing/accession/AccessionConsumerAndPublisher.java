@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.component.Archive;
@@ -22,6 +23,7 @@ import static uk.ac.ebi.subs.processing.accession.AccessionQueueConfig.USI_ACCES
 import static uk.ac.ebi.subs.processing.accession.AccessionQueueConfig.USI_ARCHIVE_ACCESSIONIDS_PUBLISHED_ROUTING_KEY;
 
 @Service
+@EnableScheduling
 public class AccessionConsumerAndPublisher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AccessionConsumerAndPublisher.class);
@@ -47,37 +49,38 @@ public class AccessionConsumerAndPublisher {
 
         if (archives.size() == 0) return;
 
-        archives.forEach(archive -> {
-            if (accessionIdRepository.findBySubmissionId(submissionId) == null) {
-                if (archive == Archive.BioStudies) {
-                    accessionIdRepository.save(
-                            createAccessionIdWrapper(submissionId, getBioStudiesAccessionID(processingCertificateEnvelope), null));
-                } else {
-                    List<String> bioSamplesAccessionIDs = collectBioSamplesAccessionIDs(processingCertificateEnvelope);
-                    accessionIdRepository.save(
-                            createAccessionIdWrapper(submissionId, null, bioSamplesAccessionIDs));
-                }
+        if (archives.size() > 1)
+            throw new IllegalStateException("ProcessingCertificateEnvelope can not contain processing certificates from more than 1 archive.");
+
+        Archive archive = archives.get(0);
+        if (accessionIdRepository.findBySubmissionId(submissionId) == null) {
+            if (archive == Archive.BioStudies) {
+                accessionIdRepository.save(
+                        createAccessionIdWrapper(submissionId, getBioStudiesAccessionID(processingCertificateEnvelope), null));
             } else {
-                AccessionIdWrapper accessionIDWrapper = accessionIdRepository.findBySubmissionId(submissionId);
-                if (archive == Archive.BioStudies) {
-                    final String bioStudiesAccessionID = getBioStudiesAccessionID(processingCertificateEnvelope);
-
-                    LOGGER.info("Update biostudies accessionID {} for submission: {}", bioStudiesAccessionID, submissionId);
-
-                    accessionIDWrapper.setBioStudiesAccessionId(bioStudiesAccessionID);
-
-                } else {
-                    final List<String> bioSamplesAccessionIds = collectBioSamplesAccessionIDs(processingCertificateEnvelope);
-
-                    LOGGER.info("Update biosamples accessionIDs {} for submission: {}", bioSamplesAccessionIds, submissionId);
-
-                    accessionIDWrapper.setBioSamplesAccessionIds(bioSamplesAccessionIds);
-                }
-
-                accessionIdRepository.save(accessionIDWrapper);
+                List<String> bioSamplesAccessionIDs = collectBioSamplesAccessionIDs(processingCertificateEnvelope);
+                accessionIdRepository.save(
+                        createAccessionIdWrapper(submissionId, null, bioSamplesAccessionIDs));
             }
-        });
+        } else {
+            AccessionIdWrapper accessionIDWrapper = accessionIdRepository.findBySubmissionId(submissionId);
+            if (archive == Archive.BioStudies) {
+                final String bioStudiesAccessionID = getBioStudiesAccessionID(processingCertificateEnvelope);
 
+                LOGGER.info("Update biostudies accessionID {} for submission: {}", bioStudiesAccessionID, submissionId);
+
+                accessionIDWrapper.setBioStudiesAccessionId(bioStudiesAccessionID);
+
+            } else {
+                final List<String> bioSamplesAccessionIds = collectBioSamplesAccessionIDs(processingCertificateEnvelope);
+
+                LOGGER.info("Update biosamples accessionIDs {} for submission: {}", bioSamplesAccessionIds, submissionId);
+
+                accessionIDWrapper.setBioSamplesAccessionIds(bioSamplesAccessionIds);
+            }
+
+            accessionIdRepository.save(accessionIDWrapper);
+        }
     }
 
     private AccessionIdWrapper createAccessionIdWrapper(
@@ -128,6 +131,7 @@ public class AccessionConsumerAndPublisher {
                     );
 
                     accessionIDWrapper.setMessageSentDate(LocalDateTime.now());
+                    accessionIdRepository.save(accessionIDWrapper);
                 }
             }
         );

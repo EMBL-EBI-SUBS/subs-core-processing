@@ -18,6 +18,7 @@ import uk.ac.ebi.subs.repository.repos.AccessionIdRepository;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -64,16 +65,13 @@ public class AccessionConsumerAndPublisherTest {
 
     @Test
     public void whenMessageFromNotRelevantArchiveThenRepositoryEmpty() {
-        List<Archive> archives = Arrays.asList(Archive.Ena, Archive.ArrayExpress, Archive.Ena, Archive.Metabolights, Archive.Ena);
-        List<ProcessingCertificateEnvelope> processingCertificateEnvelopes = generateProcessingCertificateEnvelops(archives);
+        Archive archive = Archive.Ena;
+        ProcessingCertificateEnvelope processingCertificateEnvelope =
+                createProcessingCertificateEnvelope(archive, SUBMISSION_IDS.get(0));
 
-        for (int i = 0; i < NUMBER_OF_SUBMISSION; i++) {
-            accessionConsumerAndPublisher.consumeAccessionIds(processingCertificateEnvelopes.get(i));
-        }
+        accessionConsumerAndPublisher.consumeAccessionIds(processingCertificateEnvelope);
 
-        for (int i = 0; i < NUMBER_OF_SUBMISSION; i++) {
-            assertNull(accessionIdRepository.findBySubmissionId(SUBMISSION_IDS.get(i)));
-        }
+        assertNull(accessionIdRepository.findBySubmissionId(SUBMISSION_IDS.get(0)));
     }
 
     @Test
@@ -84,23 +82,11 @@ public class AccessionConsumerAndPublisherTest {
                 any(AccessionIdWrapper.class)
         );
 
-        List<Archive> archives = Arrays.asList(Archive.Ena, Archive.BioStudies, Archive.Ena, Archive.BioStudies, Archive.Ena);
-        List<ProcessingCertificateEnvelope> processingCertificateEnvelopes = generateProcessingCertificateEnvelops(archives);
+        Archive archive = Archive.BioStudies;
+        ProcessingCertificateEnvelope processingCertificateEnvelope =
+                createProcessingCertificateEnvelope(archive, SUBMISSION_IDS.get(0));
 
-        for (int i = 0; i < NUMBER_OF_SUBMISSION; i++) {
-            accessionConsumerAndPublisher.consumeAccessionIds(processingCertificateEnvelopes.get(i));
-        }
-
-        List<AccessionIdWrapper> accessionIdWrappersFromRepo = new ArrayList<>();
-        for (int i = 0; i < NUMBER_OF_SUBMISSION; i++) {
-            accessionIdWrappersFromRepo.add(accessionIdRepository.findBySubmissionId(SUBMISSION_IDS.get(i)));
-        }
-        accessionIdWrappersFromRepo.removeIf(Objects::isNull);
-
-        assertThat(accessionIdWrappersFromRepo.size(), is(equalTo(2)));
-        accessionIdWrappersFromRepo.forEach(
-                accessionIdWrapper -> assertThat(accessionIdWrapper.getBioStudiesAccessionId(), is(notNullValue()))
-        );
+        accessionConsumerAndPublisher.consumeAccessionIds(processingCertificateEnvelope);
 
         verify(rabbitMessagingTemplate, times(0))
             .convertAndSend(Matchers.any(String.class), Matchers.any(String.class), Matchers.any(Object.class));
@@ -114,40 +100,26 @@ public class AccessionConsumerAndPublisherTest {
                 any(AccessionIdWrapper.class)
         );
 
-        List<Archive> archives = Arrays.asList(Archive.BioStudies, Archive.BioSamples, Archive.Ena, Archive.BioSamples, Archive.Ena);
-        List<ProcessingCertificateEnvelope> processingCertificateEnvelopes = generateProcessingCertificateEnvelops(archives);
+        Archive archive = Archive.BioStudies;
+        ProcessingCertificateEnvelope processingCertificateEnvelope =
+                createProcessingCertificateEnvelope(archive, SUBMISSION_IDS.get(0));
 
-        for (int i = 0; i < NUMBER_OF_SUBMISSION; i++) {
-            accessionConsumerAndPublisher.consumeAccessionIds(processingCertificateEnvelopes.get(i));
-        }
+        accessionConsumerAndPublisher.consumeAccessionIds(processingCertificateEnvelope);
 
-        List<AccessionIdWrapper> accessionIdWrappersFromRepo = new ArrayList<>();
-        for (int i = 0; i < NUMBER_OF_SUBMISSION; i++) {
-            accessionIdWrappersFromRepo.add(accessionIdRepository.findBySubmissionId(SUBMISSION_IDS.get(i)));
-        }
-        accessionIdWrappersFromRepo.removeIf(Objects::isNull);
+        archive = Archive.BioSamples;
+        processingCertificateEnvelope =
+                createProcessingCertificateEnvelope(archive, SUBMISSION_IDS.get(0));
 
-        assertThat(accessionIdWrappersFromRepo.size(), is(equalTo(3)));
+        accessionConsumerAndPublisher.consumeAccessionIds(processingCertificateEnvelope);
 
         accessionConsumerAndPublisher.sendAccessionIDs();
 
-        verify(rabbitMessagingTemplate, times(2))
+        verify(rabbitMessagingTemplate, times(1))
                 .convertAndSend(Matchers.any(String.class), Matchers.any(String.class), Matchers.any(Object.class));
     }
 
-    private List<ProcessingCertificateEnvelope> generateProcessingCertificateEnvelops(List<Archive> archives) {
-        List<ProcessingCertificateEnvelope> processingCertificateEnvelopes = new ArrayList<>();
-
-        for (int i = 0; i < NUMBER_OF_SUBMISSION; i++) {
-            processingCertificateEnvelopes.add(
-                    createProcessingCertificateEnvelope(SUBMISSION_IDS.get(i), archives.get(i)));
-        }
-
-        return processingCertificateEnvelopes;
-    }
-
     private ProcessingCertificateEnvelope createProcessingCertificateEnvelope(
-            String submissionId, Archive archive) {
+            Archive archive, String submissionId) {
         ProcessingCertificateEnvelope processingCertificateEnvelope = new ProcessingCertificateEnvelope();
         processingCertificateEnvelope.setSubmissionId(submissionId);
 
@@ -157,11 +129,6 @@ public class AccessionConsumerAndPublisherTest {
             if (archive.equals(Archive.BioStudies)) {
                 break;
             }
-        }
-
-        // to make a complete accession id wrapper object
-        if (archive.equals(Archive.BioSamples)) {
-            processingCertificates.add(generateProcessingCertificate(Archive.BioStudies));
         }
 
         processingCertificateEnvelope.setProcessingCertificates(processingCertificates);
