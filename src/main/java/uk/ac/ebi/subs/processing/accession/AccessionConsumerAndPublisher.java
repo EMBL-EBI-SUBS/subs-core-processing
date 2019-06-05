@@ -1,5 +1,7 @@
 package uk.ac.ebi.subs.processing.accession;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,6 +22,8 @@ import static uk.ac.ebi.subs.processing.accession.AccessionQueueConfig.USI_ARCHI
 
 @Service
 public class AccessionConsumerAndPublisher {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccessionConsumerAndPublisher.class);
 
     private RabbitMessagingTemplate rabbitMessagingTemplate;
     private AccessionIdRepository accessionIdRepository;
@@ -55,9 +59,18 @@ public class AccessionConsumerAndPublisher {
             } else {
                 AccessionIdWrapper accessionIDWrapper = accessionIdRepository.findBySubmissionId(submissionId);
                 if (archive == Archive.BioStudies) {
-                    accessionIDWrapper.setBioStudiesAccessionId(getBioStudiesAccessionID(processingCertificateEnvelope));
+                    final String bioStudiesAccessionID = getBioStudiesAccessionID(processingCertificateEnvelope);
+
+                    LOGGER.info("Update biostudies accessionID {} for submission: {}", bioStudiesAccessionID, submissionId);
+
+                    accessionIDWrapper.setBioStudiesAccessionId(bioStudiesAccessionID);
+
                 } else {
-                    accessionIDWrapper.setBioSamplesAccessionIds(collectBioSamplesAccessionIDs(processingCertificateEnvelope));
+                    final List<String> bioSamplesAccessionIds = collectBioSamplesAccessionIDs(processingCertificateEnvelope);
+
+                    LOGGER.info("Update biosamples accessionIDs {} for submission: {}", bioSamplesAccessionIds, submissionId);
+
+                    accessionIDWrapper.setBioSamplesAccessionIds(bioSamplesAccessionIds);
                 }
 
                 accessionIdRepository.save(accessionIDWrapper);
@@ -72,6 +85,8 @@ public class AccessionConsumerAndPublisher {
         accessionIdWrapper.setSubmissionId(submissionId);
         accessionIdWrapper.setBioStudiesAccessionId(bioStudiesAccessionId);
         accessionIdWrapper.setBioSamplesAccessionIds(bioSamplesAccessionIds);
+
+        LOGGER.info("Persist accessionIDs to DB: {}", accessionIdWrapper);
 
         return accessionIdWrapper;
     }
@@ -100,6 +115,8 @@ public class AccessionConsumerAndPublisher {
                     && !accessionIDWrapper.getBioStudiesAccessionId().isEmpty()) {
 
                     AccessionIdEnvelope accessionIdEnvelope = createAndPopulateAccessionIdEnvelope(accessionIDWrapper);
+
+                    LOGGER.info("Sent accessionIdEnvelope: {} to archives", accessionIdEnvelope);
 
                     rabbitMessagingTemplate.convertAndSend(
                                 Exchanges.SUBMISSIONS,
