@@ -14,6 +14,7 @@ import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.repository.model.accession.AccessionIdWrapper;
 import uk.ac.ebi.subs.repository.repos.AccessionIdRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -105,6 +106,8 @@ public class AccessionConsumerAndPublisher {
 
     @Scheduled(fixedDelayString = "${usi.dispatcher.accessionid.delayTime}")
     public void sendAccessionIDs() {
+        LOGGER.info("Scheduler is started to execute the accession ID sending");
+
         List<AccessionIdWrapper> accessionIdWrappers = accessionIdRepository.findByMessageSentDateIsNull();
 
         accessionIdWrappers.forEach(
@@ -123,6 +126,8 @@ public class AccessionConsumerAndPublisher {
                                 USI_ARCHIVE_ACCESSIONIDS_PUBLISHED_ROUTING_KEY,
                                 accessionIdEnvelope
                     );
+
+                    accessionIDWrapper.setMessageSentDate(LocalDateTime.now());
                 }
             }
         );
