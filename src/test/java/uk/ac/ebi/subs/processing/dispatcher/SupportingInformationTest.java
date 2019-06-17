@@ -31,9 +31,11 @@ import static org.junit.Assert.assertThat;
 @SpringBootTest(classes = CoreProcessingApp.class)
 public class SupportingInformationTest {
 
-
     @Autowired
     DispatcherService dispatcherService;
+
+    @Autowired
+    private SubmissionEnvelopeService submissionEnvelopeService;
 
     @Autowired
     SubmissionRepository submissionRepository;
@@ -72,7 +74,6 @@ public class SupportingInformationTest {
         assay.getSampleUses().add(new SampleUse(sampleRef));
 
         assayRepository.save(assay);
-
     }
 
     @After
@@ -82,7 +83,8 @@ public class SupportingInformationTest {
 
     @Test
     public void testSupportingSamples() {
-        Map<Archive, SubmissionEnvelope> requests = dispatcherService.determineSupportingInformationRequired(submission);
+        SubmissionEnvelope submissionEnvelope = submissionEnvelopeService.fetchOne(submission.getId());
+        Map<Archive, SubmissionEnvelope> requests = dispatcherService.determineSupportingInformationRequired(submissionEnvelope);
 
         assertThat(requests.keySet(), hasSize(1));
         assertThat(requests.containsKey(Archive.BioSamples), is(true));
@@ -92,8 +94,5 @@ public class SupportingInformationTest {
 
         assertThat("supporting info requirement identified ", envelope.getSupportingSamplesRequired(), hasSize(1));
         assertThat("supporting info not filled out yet", envelope.getSupportingSamples(), empty());
-
-
     }
-
 }

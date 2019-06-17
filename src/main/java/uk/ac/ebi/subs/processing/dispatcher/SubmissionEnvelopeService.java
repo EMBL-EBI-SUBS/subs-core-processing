@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.Submission;
+import uk.ac.ebi.subs.data.submittable.Project;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
@@ -20,6 +21,7 @@ import uk.ac.ebi.subs.repository.repos.submittables.SampleGroupRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.StudyRepository;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -79,7 +81,11 @@ public class SubmissionEnvelopeService {
         submissionEnvelope.getEgaDacPolicies().addAll(egaDacPolicyRepository.findBySubmissionId(submissionId));
         submissionEnvelope.getEgaDacs().addAll(egaDacRepository.findBySubmissionId(submissionId));
         submissionEnvelope.getEgaDatasets().addAll(egaDatasetRepository.findBySubmissionId(submissionId));
-        submissionEnvelope.getProjects().addAll(projectRepository.findBySubmissionId(submissionId));
+
+        List<uk.ac.ebi.subs.repository.model.Project> projects = projectRepository.findBySubmissionId(submissionId);
+        Project project = projects.size() == 0 ? null : projects.get(0);
+        submissionEnvelope.setProject(project);
+
         submissionEnvelope.getProtocols().addAll(protocolRepository.findBySubmissionId(submissionId));
         submissionEnvelope.getSampleGroups().addAll(sampleGroupRepository.findBySubmissionId(submissionId));
         submissionEnvelope.getSamples().addAll(sampleRepository.findBySubmissionId(submissionId));

@@ -6,12 +6,12 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.stereotype.Service;
+import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
-import uk.ac.ebi.subs.repository.model.Submission;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,16 +44,18 @@ public class DispatcherRabbitBridge {
 
 
     /**
-     * Determine what supporting information is required from the archvies
+     * Determine what supporting information is required from the archives
      *
-     * @param submission
+     * @param submissionEnvelopeSent that contains the submission object
      */
     @RabbitListener(queues = Queues.SUBMISSION_SUBMITTED_CHECK_SUPPORTING_INFO)
-    public void checkSupportingInfoRequirement(Submission submission) {
+    public void checkSupportingInfoRequirement(SubmissionEnvelope submissionEnvelopeSent) {
+        Submission submission = submissionEnvelopeSent.getSubmission();
+
         logger.info("checkSupportingInfoRequirement {}", submission);
 
-
-        Map<Archive, SubmissionEnvelope> submissionEnvelopesForArchives = dispatcherService.determineSupportingInformationRequired(submission);
+        Map<Archive, SubmissionEnvelope> submissionEnvelopesForArchives =
+                dispatcherService.determineSupportingInformationRequired(submissionEnvelopeSent);
 
         if (!submissionEnvelopesForArchives.containsKey(Archive.BioSamples)) {
             return;

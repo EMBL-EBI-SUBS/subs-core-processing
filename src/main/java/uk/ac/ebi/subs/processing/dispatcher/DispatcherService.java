@@ -13,7 +13,7 @@ public interface DispatcherService {
 
     Map<Archive, SubmissionEnvelope> assessDispatchReadiness(Submission submission, String jwtToken);
 
-    Map<Archive, SubmissionEnvelope> determineSupportingInformationRequired(Submission submission);
+    Map<Archive, SubmissionEnvelope> determineSupportingInformationRequired(SubmissionEnvelope submissionEnvelope);
 
     void updateSubmittablesStatusToSubmitted(Archive archive, SubmissionEnvelope submissionEnvelope);
 
