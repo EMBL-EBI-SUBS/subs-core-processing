@@ -87,6 +87,7 @@ public class DispatcherServiceImpl implements DispatcherService {
                             .filter(Objects::nonNull)
                             .filter(ref -> ref.getAlias() != null || ref.getAccession() != null) //TODO this is because of empty refs as defaults
                             .map(ref -> lookupRefAndFillInAccession(refLookupCache, ref) )
+                            .filter(Objects::nonNull)
                             .filter(referencedSubmittable -> !isForSameArchiveAndInSameSubmission(submissionId, archive, referencedSubmittable))
                             .collect(Collectors.toList());
 

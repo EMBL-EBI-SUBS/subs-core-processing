@@ -5,6 +5,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import uk.ac.ebi.subs.TestCoreProcessingApp;
 import uk.ac.ebi.subs.data.submittable.AssayData;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.processing.fileupload.UploadedFile;
@@ -21,7 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = TestCoreProcessingApp.class)
 public class DispatcherServiceTest {
 
     @Autowired

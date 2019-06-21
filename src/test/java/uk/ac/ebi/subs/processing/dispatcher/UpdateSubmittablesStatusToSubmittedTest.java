@@ -97,7 +97,6 @@ public class UpdateSubmittablesStatusToSubmittedTest {
             Archive archive = (i % 2 == 0) ? Archive.BioSamples : Archive.Pride;
 
             ProcessingStatus processingStatus = ProcessingStatus.createForSubmittable(s);
-            ;
             processingStatus.setId(uuid());
             processingStatus.setArchive(archive.name());
 
@@ -107,6 +106,8 @@ public class UpdateSubmittablesStatusToSubmittedTest {
             }
 
             processingStatusRepository.insert(processingStatus);
+            s.setProcessingStatus(processingStatus);
+
             studyRepository.insert(s);
 
             studies.add(s);

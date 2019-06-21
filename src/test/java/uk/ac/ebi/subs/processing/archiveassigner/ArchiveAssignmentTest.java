@@ -39,13 +39,11 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
-
 import static uk.ac.ebi.subs.processing.utils.DataTypeBuilder.buildDataType;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CoreProcessingApp.class)
 public class ArchiveAssignmentTest {
-
 
     private Sample sample;
     private Study study;
@@ -63,7 +61,6 @@ public class ArchiveAssignmentTest {
 
     @Autowired
     private DataTypeRepository dataTypeRepository;
-
 
     @Before
     public void setUp() {
@@ -94,7 +91,6 @@ public class ArchiveAssignmentTest {
                 dataTypeRepository).forEach(MongoRepository::deleteAll);
     }
 
-
     @Test
     public void givenSample_assignBioSamples() {
         String archive = extractArchive(sample);
@@ -121,7 +117,6 @@ public class ArchiveAssignmentTest {
         String archive = extractArchive(assay);
 
         assertThat(archive, equalTo(Archive.Pride.name()));
-
     }
 
     @Test
@@ -145,7 +140,7 @@ public class ArchiveAssignmentTest {
         s.setSubmission(submission);
         s.setDataType(sampleType);
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(s);
-        submittableHelperService.processingStatusAndValidationResultSetUp(s);
+        submittableHelperService.processingStatusAndValidationResultSetUpForSubmittable(s);
         sampleRepository.save(s);
         return s;
     }
@@ -157,7 +152,7 @@ public class ArchiveAssignmentTest {
         s.setProjectRef(null);
         s.setDataType(studyDataType);
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(s);
-        submittableHelperService.processingStatusAndValidationResultSetUp(s);
+        submittableHelperService.processingStatusAndValidationResultSetUpForSubmittable(s);
         studyRepository.save(s);
         return s;
     }
@@ -169,12 +164,11 @@ public class ArchiveAssignmentTest {
         a.setDataType(study.getDataType());
 
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(a);
-        submittableHelperService.processingStatusAndValidationResultSetUp(a);
+        submittableHelperService.processingStatusAndValidationResultSetUpForSubmittable(a);
         a.setStudyRef((StudyRef) study.asRef());
 
         assayRepository.save(a);
         return a;
-
     }
 
     public Analysis createSeqVarAnalysis(String alias, Submission submission, Study study, Sample sample) {
@@ -184,10 +178,9 @@ public class ArchiveAssignmentTest {
         a.setDataType(enaType);
 
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(a);
-        submittableHelperService.processingStatusAndValidationResultSetUp(a);
+        submittableHelperService.processingStatusAndValidationResultSetUpForSubmittable(a);
         a.setSampleRefs(Arrays.asList((SampleRef) sample.asRef()));
         a.setStudyRefs(Arrays.asList((StudyRef) study.asRef()));
-
 
         analysisRepository.save(a);
 
@@ -201,12 +194,11 @@ public class ArchiveAssignmentTest {
         project.setDataType(projectType);
 
         submittableHelperService.uuidAndTeamFromSubmissionSetUp(project);
-        submittableHelperService.processingStatusAndValidationResultSetUp(project);
+        submittableHelperService.processingStatusAndValidationResultSetUpForSubmittable(project);
 
         projectRepository.save(project);
         return project;
     }
-
 
     @Autowired
     private SubmissionHelperService submissionHelperService;
@@ -231,6 +223,4 @@ public class ArchiveAssignmentTest {
 
     @Autowired
     private AnalysisRepository analysisRepository;
-
-
 }
