@@ -9,6 +9,8 @@ import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,6 +23,9 @@ public class SubmissionCompletionService {
     private SubmissionStatusRepository submissionStatusRepository;
     private SubmissionRepository submissionRepository;
 
+    private final static List<String> FINISHED_PROCESSINGSTATUSES =
+            Arrays.asList(ProcessingStatusEnum.Completed.name(), ProcessingStatusEnum.ArchiveDisabled.name());
+
     public SubmissionCompletionService(ProcessingStatusRepository processingStatusRepository,
                                        SubmissionStatusRepository submissionStatusRepository,
                                        SubmissionRepository submissionRepository) {
@@ -32,8 +37,13 @@ public class SubmissionCompletionService {
     public boolean allSubmittablesCompleted(String submissionId) {
         Map<String,Integer> statusSummary = processingStatusRepository.summariseSubmissionStatus(submissionId);
 
-        //all submittables are complete if the summary of processing statuses has one status, and that status is 'Completed'
-        return (statusSummary.size() == 1 && statusSummary.containsKey(ProcessingStatusEnum.Completed.name()));
+        for(String statusKey : statusSummary.keySet()) {
+            if (!FINISHED_PROCESSINGSTATUSES.contains(statusKey)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void markSubmissionAsCompleted(String submissionId){
