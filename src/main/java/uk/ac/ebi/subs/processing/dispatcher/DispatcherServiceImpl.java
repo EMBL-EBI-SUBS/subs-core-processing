@@ -101,11 +101,11 @@ public class DispatcherServiceImpl implements DispatcherService {
                             .findAny();
 
                     if (!optionalBlockingSubmittable.isPresent()) {
-                        SubmissionEnvelope submissionEnvelope = upsertSubmissionEnvelope(
-                                archive,
-                                submission,
-                                readyForDispatch
-                        );
+                        SubmissionEnvelope submissionEnvelope = readyForDispatch.get(archive);
+                        if (submissionEnvelope == null) {
+                            submissionEnvelope = new SubmissionEnvelope(submission);
+                            readyForDispatch.put(archive, submissionEnvelope);
+                        }
                         submissionEnvelope.setJWTToken(jwtToken);
 
                         submissionEnvelopeStuffer.add(submissionEnvelope, submittable);
@@ -278,19 +278,6 @@ public class DispatcherServiceImpl implements DispatcherService {
         }
 
     }
-
-    public static SubmissionEnvelope upsertSubmissionEnvelope(
-            Archive archive,
-            Submission submission,
-            Map<Archive, SubmissionEnvelope> receiver) {
-
-        if (!receiver.containsKey(archive)) {
-            receiver.put(archive, new SubmissionEnvelope(submission));
-        }
-        return receiver.get(archive);
-
-    }
-
 
     private Set<String> processingStatusesToAllow;
     private Map<String, SubmittableRepository> submittableRepositoryMap;
