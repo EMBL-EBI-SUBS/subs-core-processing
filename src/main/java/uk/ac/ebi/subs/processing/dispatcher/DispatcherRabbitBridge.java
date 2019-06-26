@@ -7,7 +7,6 @@ import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.messaging.Exchanges;
@@ -15,9 +14,7 @@ import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -110,11 +107,11 @@ public class DispatcherRabbitBridge {
                 .assessDispatchReadiness(submission, jwtToken);
 
         Map<String, String> archiveTopic = new HashMap<>();
-        Class propertiesClass = Class.forName("uk.ac.ebi.subs.processing.dispatcher.DispatcherRoutingKeyProperties");
-        for ( Field field: propertiesClass.getDeclaredFields()) {
-            final String capitalizedFieldName = StringUtils.capitalize(field.getName());
-            Method method = dispatcherRoutingKeyProperties.getClass().getMethod("get" + capitalizedFieldName);
-            archiveTopic.put(capitalizedFieldName, method.invoke(dispatcherRoutingKeyProperties).toString());
+        for (Map.Entry<String, String> routingKey : dispatcherRoutingKeyProperties.getRoutingKey().entrySet()) {
+            final String archiveFromProperties = routingKey.getKey();
+            if (dispatcherRoutingKeyProperties.getEnabled().contains(archiveFromProperties)) {
+                archiveTopic.put(archiveFromProperties, routingKey.getValue());
+            }
         }
 
         for (Map.Entry<Archive, SubmissionEnvelope> entry : readyToDispatch.entrySet()) {

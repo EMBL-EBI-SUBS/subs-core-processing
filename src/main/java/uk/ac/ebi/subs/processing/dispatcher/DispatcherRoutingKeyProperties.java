@@ -6,16 +6,15 @@ import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Map;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Component
-@ConfigurationProperties(prefix = "usi.archive.dispatcher.routingKey")
+@ConfigurationProperties(prefix = "usi.archive.dispatcher")
 class DispatcherRoutingKeyProperties {
-
-    private String bioSamples;
-    private String bioStudies;
-    private String ena;
-    private String arrayExpress;
-    private String metabolights;
+    private Map<String, String> routingKey;
+    private List<String> enabled;
 }
