@@ -12,7 +12,6 @@ import uk.ac.ebi.subs.CoreProcessingApp;
 import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.data.component.Team;
 import uk.ac.ebi.subs.processing.utils.MongoDBDependentTest;
-import uk.ac.ebi.subs.repository.model.DataType;
 import uk.ac.ebi.subs.repository.model.Sample;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Study;
@@ -82,7 +81,7 @@ public class SubmissionEnvelopeServiceTest {
         study = new Study();
         study.setSubmission(submission);
         study.setAlias("study");
-        study.setDataType(buildDataType(Archive.Ena,dataTypeRepository));
+        study.setDataType(buildDataType(Archive.Ena,dataTypeRepository, "enaStudies"));
         submittableHelperService.setupNewSubmittable(study);
         studyRepository.save(study);
 
@@ -90,7 +89,7 @@ public class SubmissionEnvelopeServiceTest {
         sample = new Sample();
         sample.setSubmission(submission);
         sample.setAlias("sample");
-        sample.setDataType(buildDataType(Archive.BioSamples,dataTypeRepository));
+        sample.setDataType(buildDataType(Archive.BioSamples,dataTypeRepository, "samples"));
         submittableHelperService.setupNewSubmittable(sample);
         sampleRepository.save(sample);
     }

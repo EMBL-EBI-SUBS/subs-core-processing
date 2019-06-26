@@ -13,6 +13,7 @@ import uk.ac.ebi.subs.data.component.Team;
 import uk.ac.ebi.subs.repository.model.Analysis;
 import uk.ac.ebi.subs.repository.model.Assay;
 import uk.ac.ebi.subs.repository.model.AssayData;
+import uk.ac.ebi.subs.repository.model.DataType;
 import uk.ac.ebi.subs.repository.model.Sample;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Study;
@@ -32,8 +33,6 @@ import uk.ac.ebi.subs.repository.services.SubmittableHelperService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
-
-import static uk.ac.ebi.subs.processing.utils.DataTypeBuilder.buildDataType;
 
 /**
  * Created by davidr on 07/07/2017.
@@ -90,34 +89,34 @@ public class DispatchTestSubmissionSetup {
         return submissionHelperService.createSubmission(team, submitter);
     }
 
-    public Sample createSample(String alias, Submission submission) {
+    public Sample createSample(String alias, Submission submission, DataType dataType) {
         Sample s = new Sample();
         s.setAlias(alias);
         s.setSubmission(submission);
-        s.setDataType(buildDataType(Archive.BioSamples, dataTypeRepository));
+        s.setDataType(dataType);
         submittableHelperService.setupNewSubmittable(s);
         setArchive(s, Archive.BioSamples);
         sampleRepository.save(s);
         return s;
     }
 
-    public Study createStudy(String alias, Submission submission) {
+    public Study createStudy(String alias, Submission submission, DataType dataType) {
         Study s = new Study();
         s.setAlias(alias);
         s.setSubmission(submission);
         s.setProjectRef(null);
-        s.setDataType(buildDataType(Archive.Ena, dataTypeRepository));
+        s.setDataType(dataType);
         submittableHelperService.setupNewSubmittable(s);
         setArchive(s, Archive.Ena);
         studyRepository.save(s);
         return s;
     }
 
-    public Assay createAssay(String alias, Submission submission, Sample sample, Study study) {
+    public Assay createAssay(String alias, Submission submission, Sample sample, Study study, DataType dataType) {
         Assay a = new Assay();
         a.setAlias(alias);
         a.setSubmission(submission);
-        a.setDataType(buildDataType(Archive.Ena, dataTypeRepository));
+        a.setDataType(dataType);
         submittableHelperService.setupNewSubmittable(a);
         setArchive(a, Archive.Ena);
         a.setStudyRef((StudyRef) study.asRef());
@@ -127,11 +126,11 @@ public class DispatchTestSubmissionSetup {
         return a;
     }
 
-    AssayData createAssayDataWithNbOfFiles(String alias, Submission submission, int nbOfFiles) {
+    AssayData createAssayDataWithNbOfFiles(String alias, Submission submission, int nbOfFiles, DataType dataType) {
         AssayData assayData = new AssayData();
         assayData.setAlias(alias);
         assayData.setSubmission(submission);
-        assayData.setDataType(buildDataType(Archive.Ena, dataTypeRepository));
+        assayData.setDataType(dataType);
         submittableHelperService.setupNewSubmittable(assayData);
         setArchive(assayData, Archive.Ena);
 
@@ -143,10 +142,10 @@ public class DispatchTestSubmissionSetup {
         return assayData;
     }
 
-    Analysis createAnalysisWithNbOfFiles(String alias, Submission submission, int nbOfFiles) {
+    Analysis createAnalysisWithNbOfFiles(String alias, Submission submission, int nbOfFiles, DataType dataType) {
         Analysis analysis = new Analysis();
         analysis.setAlias(alias);
-        analysis.setDataType(buildDataType(Archive.Ena,dataTypeRepository));
+        analysis.setDataType(dataType);
         analysis.setSubmission(submission);
 
         submittableHelperService.setupNewSubmittable(analysis);
@@ -167,7 +166,6 @@ public class DispatchTestSubmissionSetup {
 
         submittable.getProcessingStatus().setArchive(archive.name());
         processingStatusRepository.save(submittable.getProcessingStatus());
-
     }
 
     private List<File> createFileRefs(int nbOfFiles, String filenamePrefix, String submissionId) {
@@ -202,5 +200,4 @@ public class DispatchTestSubmissionSetup {
     }
 
 //                        uploadedFile.setChecksum(file.getChecksum());
-
 }

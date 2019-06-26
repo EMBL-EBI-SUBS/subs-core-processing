@@ -15,11 +15,13 @@ import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.processing.utils.MongoDBDependentTest;
 import uk.ac.ebi.subs.repository.model.Assay;
+import uk.ac.ebi.subs.repository.model.DataType;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
 import uk.ac.ebi.subs.repository.model.Sample;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.Study;
 import uk.ac.ebi.subs.repository.model.Submission;
+import uk.ac.ebi.subs.repository.repos.DataTypeRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 
@@ -32,6 +34,7 @@ import java.util.stream.IntStream;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import static uk.ac.ebi.subs.processing.utils.DataTypeBuilder.buildDataType;
 
 /**
  * Created by davidr on 07/07/2017.
@@ -47,6 +50,9 @@ public class DispatchReadinessTest {
 
     @Autowired
     private ProcessingStatusRepository processingStatusRepository;
+
+    @Autowired
+    private DataTypeRepository dataTypeRepository;
 
     @Autowired
     private DispatcherService dispatcherService;
@@ -68,19 +74,23 @@ public class DispatchReadinessTest {
 
         dispatchTestSubmissionSetup.createSubmission();
 
+        DataType sampleDataType = buildDataType(Archive.BioSamples, dataTypeRepository, "samples");
+        DataType enaStudyDataType = buildDataType(Archive.BioSamples, dataTypeRepository, "enaStudies");
+        DataType sequencingExperimentDataType = buildDataType(Archive.Ena, dataTypeRepository, "sequencingExperiments");
+
         submission = dispatchTestSubmissionSetup.createSubmission();
-        study = dispatchTestSubmissionSetup.createStudy("test-study", submission);
+        study = dispatchTestSubmissionSetup.createStudy("test-study", submission, enaStudyDataType);
 
         samples = IntStream
                 .rangeClosed(1, SAMPLE_AND_ASSAY_COUNT)
                 .mapToObj(i -> Integer.valueOf(i))
-                .map(i -> dispatchTestSubmissionSetup.createSample(i.toString(), submission))
+                .map(i -> dispatchTestSubmissionSetup.createSample(i.toString(), submission, sampleDataType))
                 .collect(Collectors.toList());
 
         assays = IntStream
                 .rangeClosed(1, SAMPLE_AND_ASSAY_COUNT)
                 .mapToObj(i -> Integer.valueOf(i))
-                .map(i -> dispatchTestSubmissionSetup.createAssay(i.toString(), submission, samples.get(i - 1), study))
+                .map(i -> dispatchTestSubmissionSetup.createAssay(i.toString(), submission, samples.get(i - 1), study, sequencingExperimentDataType))
                 .collect(Collectors.toList());
 
         ProcessingStatusEnum statusEnum = ProcessingStatusEnum.Submitted;

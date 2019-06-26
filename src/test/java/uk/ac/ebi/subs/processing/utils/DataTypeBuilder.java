@@ -6,10 +6,10 @@ import uk.ac.ebi.subs.repository.repos.DataTypeRepository;
 
 public class DataTypeBuilder  {
 
-    public static DataType buildDataType(Archive archive, DataTypeRepository dataTypeRepository) {
+    public static DataType buildDataType(Archive archive, DataTypeRepository dataTypeRepository, String dataTypeId) {
         DataType dt = new DataType();
         dt.setArchive(archive);
-        dt.setId(archive.name()+Math.random());
+        dt.setId(dataTypeId);
         dataTypeRepository.insert(dt);
 
         return dt;

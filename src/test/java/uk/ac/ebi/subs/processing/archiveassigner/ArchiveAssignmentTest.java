@@ -66,10 +66,10 @@ public class ArchiveAssignmentTest {
     public void setUp() {
         tearDown();
         Submission submission = submissionHelperService.createSubmission(team, submitter);
-        proteomicsStudyType = buildDataType(Archive.Pride, dataTypeRepository);
-        sampleType = buildDataType(Archive.BioSamples, dataTypeRepository);
-        enaType = buildDataType(Archive.Ena, dataTypeRepository);
-        projectType = buildDataType(Archive.BioStudies, dataTypeRepository);
+        proteomicsStudyType = buildDataType(Archive.Pride, dataTypeRepository, "proteomicsStudies");
+        sampleType = buildDataType(Archive.BioSamples, dataTypeRepository, "samples");
+        enaType = buildDataType(Archive.Ena, dataTypeRepository, "enaStudies");
+        projectType = buildDataType(Archive.BioStudies, dataTypeRepository, "projects");
 
         project = createProject("testProject", submission);
         sample = createSample("testSample", submission);
