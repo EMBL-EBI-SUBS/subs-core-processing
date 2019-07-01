@@ -1,5 +1,5 @@
 group 'uk.ac.ebi.subs'
-version '2.9.5-SNAPSHOT'
+version '2.9.5'
 
 apply plugin: 'java'
 apply plugin: 'groovy'
