@@ -104,14 +104,14 @@ public class ApiSupportServiceMarkSubmittedTest {
 
         draftSample = new Sample();
         draftSample.setSubmission(submission);
-        ProcessingStatus.createForSubmittable(draftSample);
+        draftSample.setProcessingStatus(ProcessingStatus.createForSubmittable(draftSample));
 
         processingStatusRepository.save(draftSample.getProcessingStatus());
         sampleRepository.save(draftSample);
 
         dispatchedSample = new Sample();
         dispatchedSample.setSubmission(submission);
-        ProcessingStatus.createForSubmittable(dispatchedSample);
+        dispatchedSample.setProcessingStatus(ProcessingStatus.createForSubmittable(dispatchedSample));
         dispatchedSample.getProcessingStatus().setStatus(ProcessingStatusEnum.Dispatched);
 
         processingStatusRepository.save(dispatchedSample.getProcessingStatus());

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringRunner;
+import uk.ac.ebi.subs.TestCoreProcessingApp;
 import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.processing.accession.AccessionConsumerAndPublisher;
@@ -17,25 +18,18 @@ import uk.ac.ebi.subs.repository.model.accession.AccessionIdWrapper;
 import uk.ac.ebi.subs.repository.repos.AccessionIdRepository;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.any;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static uk.ac.ebi.subs.processing.accession.AccessionQueueConfig.USI_ARCHIVE_ACCESSIONIDS_PUBLISHED_ROUTING_KEY;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = TestCoreProcessingApp.class)
 public class AccessionConsumerAndPublisherTest {
 
     private static final List<String> SUBMISSION_IDS = new ArrayList<>();

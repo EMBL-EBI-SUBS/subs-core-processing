@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.Submission;
@@ -13,6 +14,7 @@ import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +23,7 @@ import java.util.Map;
  * This can be for the purposes of getting supporting information, or for archiving
  */
 @Service
+@EnableConfigurationProperties(DispatcherRoutingKeyProperties.class)
 public class DispatcherRabbitBridge {
 
     private static final Logger logger = LoggerFactory.getLogger(DispatcherRabbitBridge.class);
@@ -28,18 +31,20 @@ public class DispatcherRabbitBridge {
     private RabbitMessagingTemplate rabbitMessagingTemplate;
     private DispatcherService dispatcherService;
     private SubmissionCompletionService submissionCompletionService;
+    private DispatcherRoutingKeyProperties dispatcherRoutingKeyProperties;
 
     public DispatcherRabbitBridge(
             RabbitMessagingTemplate rabbitMessagingTemplate,
             MessageConverter messageConverter,
             DispatcherService dispatcherService,
-            SubmissionCompletionService submissionCompletionService
-
+            SubmissionCompletionService submissionCompletionService,
+            DispatcherRoutingKeyProperties dispatcherRoutingKeyProperties
     ) {
         this.rabbitMessagingTemplate = rabbitMessagingTemplate;
         this.rabbitMessagingTemplate.setMessageConverter(messageConverter);
         this.dispatcherService = dispatcherService;
         this.submissionCompletionService = submissionCompletionService;
+        this.dispatcherRoutingKeyProperties = dispatcherRoutingKeyProperties;
     }
 
 
@@ -83,7 +88,8 @@ public class DispatcherRabbitBridge {
      * @param submissionEnvelope
      */
     @RabbitListener(queues = Queues.SUBMISSION_DISPATCHER)
-    public void dispatchToArchives(SubmissionEnvelope submissionEnvelope) throws InterruptedException {
+    public void dispatchToArchives(SubmissionEnvelope submissionEnvelope) throws InterruptedException,
+            ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         uk.ac.ebi.subs.data.Submission submission = submissionEnvelope.getSubmission();
         logger.debug("dispatchToArchives {}", submission);
 
@@ -100,23 +106,24 @@ public class DispatcherRabbitBridge {
         Map<Archive, SubmissionEnvelope> readyToDispatch = dispatcherService
                 .assessDispatchReadiness(submission, jwtToken);
 
-        Map<Archive, String> archiveTopic = new HashMap<>();
-        archiveTopic.put(Archive.BioSamples, Topics.SAMPLES_PROCESSING);
-        archiveTopic.put(Archive.Ena, Topics.ENA_PROCESSING);
-        archiveTopic.put(Archive.ArrayExpress, Topics.AE_PROCESSING);
-        archiveTopic.put(Archive.BioStudies, Topics.BIOSTUDIES_PROCESSING);
-
+        Map<String, String> archiveTopic = new HashMap<>();
+        for (Map.Entry<String, String> routingKey : dispatcherRoutingKeyProperties.getRoutingKey().entrySet()) {
+            final String archiveFromProperties = routingKey.getKey();
+            if (dispatcherRoutingKeyProperties.getEnabled().contains(archiveFromProperties)) {
+                archiveTopic.put(archiveFromProperties, routingKey.getValue());
+            }
+        }
 
         for (Map.Entry<Archive, SubmissionEnvelope> entry : readyToDispatch.entrySet()) {
 
             Archive archive = entry.getKey();
             SubmissionEnvelope submissionEnvelopeToTransmit = entry.getValue();
 
-            if (!archiveTopic.containsKey(archive)) {
+            if (!archiveTopic.containsKey(archive.name())) {
                 throw new IllegalStateException("Dispatcher does not have topic mapping for archive " + archive + ". Processing submission " + submissionId);
             }
 
-            String targetTopic = archiveTopic.get(archive);
+            String targetTopic = archiveTopic.get(archive.name());
 
             dispatcherService.updateSubmittablesStatusToSubmitted(archive, submissionEnvelopeToTransmit);
 

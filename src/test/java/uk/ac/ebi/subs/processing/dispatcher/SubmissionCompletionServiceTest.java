@@ -54,6 +54,7 @@ public class SubmissionCompletionServiceTest {
     @Test
     public void all_statuses_completed(){
         statusSummary.put(ProcessingStatusEnum.Completed.name(),10);
+        statusSummary.put(ProcessingStatusEnum.ArchiveDisabled.name(),3);
 
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);

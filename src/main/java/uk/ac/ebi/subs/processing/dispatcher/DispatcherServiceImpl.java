@@ -19,6 +19,8 @@ import uk.ac.ebi.subs.data.submittable.Submittable;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.processing.fileupload.UploadedFile;
 import uk.ac.ebi.subs.repository.RefLookupService;
+import uk.ac.ebi.subs.repository.config.SubmittableConfig;
+import uk.ac.ebi.subs.repository.model.DataType;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.model.fileupload.File;
 import uk.ac.ebi.subs.repository.repos.fileupload.FileRepository;
@@ -56,9 +58,12 @@ public class DispatcherServiceImpl implements DispatcherService {
      */
     public Map<Archive, SubmissionEnvelope> assessDispatchReadiness(final Submission submission, final String jwtToken) {
         final String submissionId = submission.getId();
-        Map<String, Set<String>> typesAndIdsToConsider = processingStatusRepository
-                .summariseSubmissionTypesWithSubmittableIds(submissionId, processingStatusesToAllow);
+        Map<String, Set<String>> typesAndIdsToConsider = new HashMap<>();
 
+        for (Map.Entry<DataType, Set<String>> es : processingStatusRepository
+                .summariseDataTypesWithSubmittableIds(submissionId, processingStatusesToAllow).entrySet()) {
+            typesAndIdsToConsider.put(es.getKey().getId(), es.getValue());
+        }
 
         Map<Archive, SubmissionEnvelope> readyForDispatch = new HashMap<>();
 
@@ -75,8 +80,8 @@ public class DispatcherServiceImpl implements DispatcherService {
         for (Map.Entry<String, Set<String>> typeAndIds : typesAndIdsToConsider.entrySet()) {
             String type = typeAndIds.getKey();
 
-            if (submittableRepositoryMap.containsKey(type)) {
-                SubmittableRepository submittableRepository = submittableRepositoryMap.get(type);
+            if (dataTypeRepositoryMap.containsKey(type)) {
+                SubmittableRepository submittableRepository = dataTypeRepositoryMap.get(type);
 
                 for (String submittableId : typeAndIds.getValue()) {
                     StoredSubmittable submittable = submittableRepository.findOne(submittableId);
@@ -87,6 +92,7 @@ public class DispatcherServiceImpl implements DispatcherService {
                             .filter(Objects::nonNull)
                             .filter(ref -> ref.getAlias() != null || ref.getAccession() != null) //TODO this is because of empty refs as defaults
                             .map(ref -> lookupRefAndFillInAccession(refLookupCache, ref) )
+                            .filter(Objects::nonNull)
                             .filter(referencedSubmittable -> !isForSameArchiveAndInSameSubmission(submissionId, archive, referencedSubmittable))
                             .collect(Collectors.toList());
 
@@ -95,11 +101,11 @@ public class DispatcherServiceImpl implements DispatcherService {
                             .findAny();
 
                     if (!optionalBlockingSubmittable.isPresent()) {
-                        SubmissionEnvelope submissionEnvelope = upsertSubmissionEnvelope(
-                                archive,
-                                submission,
-                                readyForDispatch
-                        );
+                        SubmissionEnvelope submissionEnvelope = readyForDispatch.get(archive);
+                        if (submissionEnvelope == null) {
+                            submissionEnvelope = new SubmissionEnvelope(submission);
+                            readyForDispatch.put(archive, submissionEnvelope);
+                        }
                         submissionEnvelope.setJWTToken(jwtToken);
 
                         submissionEnvelopeStuffer.add(submissionEnvelope, submittable);
@@ -273,21 +279,9 @@ public class DispatcherServiceImpl implements DispatcherService {
 
     }
 
-    public static SubmissionEnvelope upsertSubmissionEnvelope(
-            Archive archive,
-            Submission submission,
-            Map<Archive, SubmissionEnvelope> receiver) {
-
-        if (!receiver.containsKey(archive)) {
-            receiver.put(archive, new SubmissionEnvelope(submission));
-        }
-        return receiver.get(archive);
-
-    }
-
-
     private Set<String> processingStatusesToAllow;
     private Map<String, SubmittableRepository> submittableRepositoryMap;
+    private Map<String, SubmittableRepository<? extends StoredSubmittable>> dataTypeRepositoryMap;
     private RefLookupService refLookupService;
     private SubmissionEnvelopeService submissionEnvelopeService;
     private ProcessingStatusBulkOperations processingStatusBulkOperations;
@@ -296,6 +290,7 @@ public class DispatcherServiceImpl implements DispatcherService {
     private FileRepository fileRepository;
 
     public DispatcherServiceImpl(Map<Class<? extends StoredSubmittable>, SubmittableRepository<? extends StoredSubmittable>> submittableRepositoryMap,
+                                 SubmittableConfig.DataTypeRepositoryMap dataTypeRepositoryMap,
                                  RefLookupService refLookupService, SubmissionEnvelopeService submissionEnvelopeService,
                                  ProcessingStatusBulkOperations processingStatusBulkOperations,
                                  ProcessingStatusRepository processingStatusRepository, SubmissionEnvelopeStuffer submissionEnvelopeStuffer,
@@ -309,8 +304,8 @@ public class DispatcherServiceImpl implements DispatcherService {
 
         setupStatusesToProcess();
         buildSubmittableRepositoryMap(submittableRepositoryMap);
+        this.dataTypeRepositoryMap = dataTypeRepositoryMap.getDataTypeRepositoryMap();
     }
-
 
     private void buildSubmittableRepositoryMap(Map<Class<? extends StoredSubmittable>, SubmittableRepository<? extends StoredSubmittable>> submittableRepositoryMap) {
         this.submittableRepositoryMap = new HashMap<>();
@@ -331,5 +326,4 @@ public class DispatcherServiceImpl implements DispatcherService {
 
         return filesByFilename;
     }
-
 }

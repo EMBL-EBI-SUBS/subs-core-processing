@@ -2,6 +2,7 @@ package uk.ac.ebi.subs.processing.dispatcher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.Submission;
@@ -20,8 +21,10 @@ import uk.ac.ebi.subs.repository.repos.submittables.ProtocolRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleGroupRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.StudyRepository;
+import uk.ac.ebi.subs.repository.repos.submittables.SubmittableRepository;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -46,12 +49,15 @@ public class SubmissionEnvelopeService {
     private SampleRepository sampleRepository;
     private StudyRepository studyRepository;
 
+    private List<SubmittableRepository<?>> submissionContentsRepositories;
+
     public SubmissionEnvelopeService(SubmissionRepository submissionRepository, AnalysisRepository analysisRepository,
                                      AssayDataRepository assayDataRepository, AssayRepository assayRepository,
                                      EgaDacPolicyRepository egaDacPolicyRepository, EgaDacRepository egaDacRepository,
                                      EgaDatasetRepository egaDatasetRepository, ProjectRepository projectRepository,
                                      ProtocolRepository protocolRepository, SampleGroupRepository sampleGroupRepository,
-                                     SampleRepository sampleRepository, StudyRepository studyRepository) {
+                                     SampleRepository sampleRepository, StudyRepository studyRepository,
+                                     @Qualifier("submissionContentsRepositories") List<SubmittableRepository<?>> submissionContentsRepositories) {
         this.submissionRepository = submissionRepository;
         this.analysisRepository = analysisRepository;
         this.assayDataRepository = assayDataRepository;
@@ -64,6 +70,7 @@ public class SubmissionEnvelopeService {
         this.sampleGroupRepository = sampleGroupRepository;
         this.sampleRepository = sampleRepository;
         this.studyRepository = studyRepository;
+        this.submissionContentsRepositories = submissionContentsRepositories;
     }
 
     public SubmissionEnvelope fetchOne(String submissionId) {
@@ -101,21 +108,10 @@ public class SubmissionEnvelopeService {
             throw new ResourceNotFoundException();
         }
 
-        return Stream.of(
-                analysisRepository,
-                assayDataRepository,
-                assayRepository,
-                egaDacPolicyRepository,
-                egaDacRepository,
-                egaDatasetRepository,
-                projectRepository,
-                protocolRepository,
-                sampleGroupRepository,
-                sampleRepository,
-                studyRepository
-        )
-                .filter(r -> r != null)
-                .flatMap(repo -> repo.streamBySubmissionId(submissionId))
-                ;
+        return submissionContentsRepositories.stream()
+                .filter(Objects::nonNull)
+                .flatMap(repo -> repo.streamBySubmissionId(submissionId));
+
     }
 }
+
