@@ -1,5 +1,5 @@
 group 'uk.ac.ebi.subs'
-version '2.9.5'
+version '2.10.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'groovy'
@@ -28,9 +28,9 @@ repositories {
 }
 
 dependencies {
-    compile("uk.ac.ebi.subs:subs-processing-model:2.11.1-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-processing-model:2.12.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:0.4.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-repository:2.28.6-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-repository:2.29.0-SNAPSHOT")
 
     compileOnly("org.projectlombok:lombok:1.16.18")
     compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
