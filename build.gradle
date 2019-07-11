@@ -21,6 +21,10 @@ buildscript {
     }
 }
 
+plugins {
+    id 'com.sourcemuse.mongo' version '1.0.0'
+}
+
 repositories {
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         mavenCentral()
@@ -58,12 +62,14 @@ artifacts {
 }
 
 task('externalCiTest', type: Test) {
-    useJUnit {
-        excludeCategories 'uk.ac.ebi.subs.apisupport.utils.MongoDBDependentTest'
-    }
     testLogging {
         exceptionFormat = 'full'
     }
+    runWithMongoDb = true
+}
+
+mongo {
+    mongoVersion = "3.4.3"
 }
 
 uploadArchives {
