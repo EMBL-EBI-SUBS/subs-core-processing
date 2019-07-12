@@ -4,13 +4,8 @@ language: java
 jdk:
   - oraclejdk8
 
-addons:
-  apt:
-    sources:
-      - mongodb-upstart
-    packages:
-      - mongodb-org-server
-      - mongodb-org-shell
+services:
+  - mongodb
 
 script: "./gradlew externalCiTest"
 
