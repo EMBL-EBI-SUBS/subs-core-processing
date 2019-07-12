@@ -9,10 +9,6 @@ buildscript {
     }
 }
 
-plugins {
-    id 'com.sourcemuse.mongo' version '1.0.0'
-}
-
 group 'uk.ac.ebi.subs'
 version '2.10.0-SNAPSHOT'
 
@@ -61,15 +57,14 @@ artifacts {
     }
 }
 
-task('externalCiTest', type: Test) {
+task externalCiTest(type: Test) {
+    useJUnit {
+        excludeCategories 'uk.ac.ebi.subs.apisupport.utils.MongoDBDependentTest'
+    }
     testLogging {
+        events "passed", "skipped", "failed"
         exceptionFormat = 'full'
     }
-    runWithMongoDb = true
-}
-
-mongo {
-    mongoVersion = "3.4.3"
 }
 
 uploadArchives {
