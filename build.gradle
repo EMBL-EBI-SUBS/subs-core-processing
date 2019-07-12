@@ -67,6 +67,11 @@ task externalCiTest(type: Test) {
     }
 }
 
+configure(externalCiTest){
+    group = 'verification'
+    description = 'Run tests suitable for our external continuous integration environment.'
+}
+
 uploadArchives {
     repositories {
         mavenDeployer {

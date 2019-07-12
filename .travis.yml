@@ -1,7 +1,8 @@
+sudo: false
 language: java
 
 jdk:
-- oraclejdk8
+  - oraclejdk8
 
 addons:
   apt:
@@ -11,7 +12,7 @@ addons:
       - mongodb-org-server
       - mongodb-org-shell
 
-install: "./gradlew assemble"
+script: "./gradlew externalCiTest"
 
 before_script:
 - sleep 25
@@ -21,6 +22,8 @@ before_cache:
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 
 cache:
+  apt: true
   directories:
-  - "$HOME/.gradle/caches/"
-  - "$HOME/.gradle/wrapper/"
+    - "$HOME/.m2"
+    - "$HOME/.gradle/caches/"
+    - "$HOME/.gradle/wrapper/"
