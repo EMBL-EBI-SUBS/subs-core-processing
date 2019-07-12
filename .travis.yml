@@ -1,28 +1,24 @@
 sudo: false
 language: java
+
 jdk:
-- oraclejdk8
-addons:
-  apt:
-    sources:
-    - mongodb-upstart
-    - sourceline: deb [arch=amd64] http://repo.mongodb.org/apt/ubuntu precise/mongodb-org/3.4
-        multiverse
-      key_url: https://www.mongodb.org/static/pgp/server-3.4.asc
-    packages:
-    - mongodb-org-server
-    - mongodb-org-shell
-install: "./gradlew assemble"
+  - oraclejdk8
+
+services:
+  - mongodb
+
+script: "./gradlew externalCiTest"
+
 before_script:
 - sleep 25
+
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
 cache:
   apt: true
   directories:
-  - "$HOME/.m2"
-  - "$HOME/.gradle/caches/"
-  - "$HOME/.gradle/wrapper/"
-group: "stable"
-os: "linux"
+    - "$HOME/.m2"
+    - "$HOME/.gradle/caches/"
+    - "$HOME/.gradle/wrapper/"
