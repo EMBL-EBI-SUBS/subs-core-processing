@@ -36,6 +36,7 @@ dependencies {
     compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
     compile("org.springframework.boot:spring-boot-starter-hateoas")
     compile("org.springframework.boot:spring-boot-starter-data-mongodb")
+    compile("org.springframework.boot:spring-boot-starter-web")
     compile 'org.codehaus.groovy:groovy-all:2.4.10'
     compile 'org.springframework.security:spring-security-core'
     compile 'com.auth0:java-jwt:3.2.0'
