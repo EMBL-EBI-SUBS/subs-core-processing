@@ -10,7 +10,7 @@ buildscript {
 }
 
 group 'uk.ac.ebi.subs'
-version '2.10.2-SNAPSHOT'
+version '2.10.3-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'groovy'
@@ -121,6 +121,7 @@ uploadArchives {
 
 springBoot {
     executable = true
+    buildInfo()
 }
 
 ssh.settings {
