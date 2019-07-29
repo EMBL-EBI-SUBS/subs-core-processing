@@ -14,7 +14,6 @@ import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,15 +87,14 @@ public class DispatcherRabbitBridge {
      * @param submissionEnvelope
      */
     @RabbitListener(queues = Queues.SUBMISSION_DISPATCHER)
-    public void dispatchToArchives(SubmissionEnvelope submissionEnvelope) throws InterruptedException,
-            ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void dispatchToArchives(SubmissionEnvelope submissionEnvelope) throws InterruptedException {
         uk.ac.ebi.subs.data.Submission submission = submissionEnvelope.getSubmission();
         logger.debug("dispatchToArchives {}", submission);
 
         final String submissionId = submission.getId();
 
-        if (submissionCompletionService.allSubmittablesCompleted(submissionId)){
-            submissionCompletionService.markSubmissionAsCompleted(submissionId);
+        if (submissionCompletionService.allSubmittablesProcessingFinished(submissionId)){
+            submissionCompletionService.markSubmissionWithFinishedStatus(submissionId);
             logger.debug("submission completed {}", submission);
             return;
         }

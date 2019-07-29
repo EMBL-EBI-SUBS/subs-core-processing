@@ -55,11 +55,13 @@ public class SubmissionCompletionServiceTest {
     public void all_statuses_completed(){
         statusSummary.put(ProcessingStatusEnum.Completed.name(),10);
         statusSummary.put(ProcessingStatusEnum.ArchiveDisabled.name(),3);
+        statusSummary.put(ProcessingStatusEnum.Error.name(),7);
+        statusSummary.put(ProcessingStatusEnum.Rejected.name(),13);
 
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
 
-        Assert.assertTrue(submissionCompletionService.allSubmittablesCompleted(submission.getId()));
+        Assert.assertTrue(submissionCompletionService.allSubmittablesProcessingFinished(submission.getId()));
     }
 
     @Test
@@ -69,7 +71,7 @@ public class SubmissionCompletionServiceTest {
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
 
-        Assert.assertFalse(submissionCompletionService.allSubmittablesCompleted(submission.getId()));
+        Assert.assertFalse(submissionCompletionService.allSubmittablesProcessingFinished(submission.getId()));
     }
 
     @Test
@@ -80,18 +82,37 @@ public class SubmissionCompletionServiceTest {
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
 
-        Assert.assertFalse(submissionCompletionService.allSubmittablesCompleted(submission.getId()));
+        Assert.assertFalse(submissionCompletionService.allSubmittablesProcessingFinished(submission.getId()));
     }
 
     @Test
-    public void submission_marked_as_completed(){
+    public void whenAnySubmittablesMarkedAsError_thenSubmissionShouldNotMarkedAsCompleted(){
+        statusSummary.put(ProcessingStatusEnum.Error.name(),10);
+
+        Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
+                .thenReturn(statusSummary);
         Mockito.when(mockSubmissionRepository.findOne(submission.getId()))
                 .thenReturn(submission);
 
-        submissionCompletionService.markSubmissionAsCompleted(submission.getId());
+        submissionCompletionService.markSubmissionWithFinishedStatus(submission.getId());
+
+        Mockito.verify(mockSubmissionStatusRepository).save(submissionStatus);
+        Assert.assertEquals(SubmissionStatusEnum.Failed.name(),submissionStatus.getStatus());
+    }
+
+    @Test
+    public void whenAllSubmittablesMarkedAsCompleted_thenSubmissionShouldtMarkedAsCompleted(){
+        statusSummary.put(ProcessingStatusEnum.Completed.name(),10);
+        statusSummary.put(ProcessingStatusEnum.ArchiveDisabled.name(),10);
+
+        Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
+                .thenReturn(statusSummary);
+        Mockito.when(mockSubmissionRepository.findOne(submission.getId()))
+                .thenReturn(submission);
+
+        submissionCompletionService.markSubmissionWithFinishedStatus(submission.getId());
 
         Mockito.verify(mockSubmissionStatusRepository).save(submissionStatus);
         Assert.assertEquals(SubmissionStatusEnum.Completed.name(),submissionStatus.getStatus());
-
     }
 }
