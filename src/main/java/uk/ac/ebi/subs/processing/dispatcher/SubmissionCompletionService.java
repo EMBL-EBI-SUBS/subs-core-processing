@@ -10,8 +10,11 @@ import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This is a Spring @Service component for {@link Submission} entity, that is dealing with {@link Submission} completion.
@@ -23,8 +26,12 @@ public class SubmissionCompletionService {
     private SubmissionStatusRepository submissionStatusRepository;
     private SubmissionRepository submissionRepository;
 
-    private final static List<String> FINISHED_PROCESSINGSTATUSES =
+    private final static List<String> SUCCEED_PROCESSINGSTATUSES =
             Arrays.asList(ProcessingStatusEnum.Completed.name(), ProcessingStatusEnum.ArchiveDisabled.name());
+    private final static List<String> ERRED_PROCESSINGSTATUSES =
+            Arrays.asList(ProcessingStatusEnum.Rejected.name(), ProcessingStatusEnum.Error.name());
+    private final static List<String> FINISHED_PROCESSINGSTATUSES =
+            Stream.concat(SUCCEED_PROCESSINGSTATUSES.stream(), ERRED_PROCESSINGSTATUSES.stream()).collect(Collectors.toList());
 
     public SubmissionCompletionService(ProcessingStatusRepository processingStatusRepository,
                                        SubmissionStatusRepository submissionStatusRepository,
@@ -34,8 +41,8 @@ public class SubmissionCompletionService {
         this.submissionRepository = submissionRepository;
     }
 
-    public boolean allSubmittablesCompleted(String submissionId) {
-        Map<String,Integer> statusSummary = processingStatusRepository.summariseSubmissionStatus(submissionId);
+    public boolean allSubmittablesProcessingFinished(String submissionId) {
+        Map<String, Integer> statusSummary = getSubmissionStatusSummary(submissionId);
 
         for(String statusKey : statusSummary.keySet()) {
             if (!FINISHED_PROCESSINGSTATUSES.contains(statusKey)) {
@@ -46,10 +53,24 @@ public class SubmissionCompletionService {
         return true;
     }
 
-    public void markSubmissionAsCompleted(String submissionId){
+    public void markSubmissionWithFinishedStatus(String submissionId){
         Submission submission = submissionRepository.findOne(submissionId);
         SubmissionStatus submissionStatus = submission.getSubmissionStatus();
-        submissionStatus.setStatus(SubmissionStatusEnum.Completed);
+        if (allSubmittablesSucceed(submissionId)) {
+            submissionStatus.setStatus(SubmissionStatusEnum.Completed);
+        } else {
+            submissionStatus.setStatus(SubmissionStatusEnum.Failed);
+        }
         submissionStatusRepository.save(submissionStatus);
+    }
+
+    private Map<String, Integer> getSubmissionStatusSummary(String submissionId) {
+        return processingStatusRepository.summariseSubmissionStatus(submissionId);
+    }
+
+    private boolean allSubmittablesSucceed(String submissionId) {
+        Map<String, Integer> statusSummary = getSubmissionStatusSummary(submissionId);
+
+        return Collections.disjoint(statusSummary.keySet(), ERRED_PROCESSINGSTATUSES);
     }
 }
