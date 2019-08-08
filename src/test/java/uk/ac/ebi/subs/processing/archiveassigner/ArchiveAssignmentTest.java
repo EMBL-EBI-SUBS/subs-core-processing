@@ -14,7 +14,7 @@ import uk.ac.ebi.subs.data.component.SampleRef;
 import uk.ac.ebi.subs.data.component.StudyRef;
 import uk.ac.ebi.subs.data.component.Submitter;
 import uk.ac.ebi.subs.data.component.Team;
-import uk.ac.ebi.subs.processing.archiveassignment.SubmissionArchiveAssignmentService;
+import uk.ac.ebi.subs.processing.initialsubmissionprocessing.SubmissionProcessingService;
 import uk.ac.ebi.subs.repository.model.Analysis;
 import uk.ac.ebi.subs.repository.model.Assay;
 import uk.ac.ebi.subs.repository.model.DataType;
@@ -57,7 +57,7 @@ public class ArchiveAssignmentTest {
     private DataType projectType;
 
     @Autowired
-    private SubmissionArchiveAssignmentService submissionArchiveAssignmentService;
+    private SubmissionProcessingService submissionProcessingService;
 
     @Autowired
     private DataTypeRepository dataTypeRepository;
@@ -76,7 +76,7 @@ public class ArchiveAssignmentTest {
         study = createStudy("testStudy", submission, proteomicsStudyType);
         assay = createAssay("testAssay", submission, sample, study);
         analysis = createSeqVarAnalysis("testAnalysis", submission, study, sample);
-        submissionArchiveAssignmentService.assignArchives(submission.getId());
+        submissionProcessingService.assignArchives(submission.getId());
     }
 
     @After

@@ -1,4 +1,4 @@
-package uk.ac.ebi.subs.processing.archiveassignment;
+package uk.ac.ebi.subs.processing.initialsubmissionprocessing;
 
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
