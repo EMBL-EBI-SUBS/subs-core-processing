@@ -1,5 +1,16 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.21.RELEASE")
+        classpath 'org.hidetake:gradle-ssh-plugin:1.1.3'
+    }
+}
+
 group 'uk.ac.ebi.subs'
-version '2.9.5'
+version '2.12.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'groovy'
@@ -10,17 +21,6 @@ apply plugin: 'org.hidetake.ssh'
 
 mainClassName = "uk.ac.ebi.subs.CoreProcessingApp"
 
-buildscript {
-    repositories {
-        mavenCentral()
-        maven { url "https://plugins.gradle.org/m2/" }
-    }
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.10.RELEASE")
-        classpath 'org.hidetake:gradle-ssh-plugin:1.1.3'
-    }
-}
-
 repositories {
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         mavenCentral()
@@ -28,20 +28,23 @@ repositories {
 }
 
 dependencies {
-    compile("uk.ac.ebi.subs:subs-processing-model:2.11.1-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-processing-model:2.13.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:0.4.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-repository:2.28.6-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-repository:2.30.0-SNAPSHOT")
 
     compileOnly("org.projectlombok:lombok:1.16.18")
     compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
     compile("org.springframework.boot:spring-boot-starter-hateoas")
     compile("org.springframework.boot:spring-boot-starter-data-mongodb")
+    compile("org.springframework.boot:spring-boot-starter-web")
     compile 'org.codehaus.groovy:groovy-all:2.4.10'
     compile 'org.springframework.security:spring-security-core'
     compile 'com.auth0:java-jwt:3.2.0'
     compile ("org.springframework.hateoas:spring-hateoas:0.23.0.RELEASE") // for traverson
     compile ("com.mashape.unirest:unirest-java:1.4.9")
     compile("de.siegmar:logback-gelf:1.1.0")
+
+    compile 'de.codecentric:spring-boot-admin-starter-client:1.5.7'
 
     testCompile("junit:junit")
     testCompile("org.springframework.boot:spring-boot-starter-test")
@@ -57,13 +60,19 @@ artifacts {
     }
 }
 
-task('externalCiTest', type: Test) {
+task externalCiTest(type: Test) {
     useJUnit {
-        excludeCategories 'uk.ac.ebi.subs.MongoDBDependentTest'
+        excludeCategories 'uk.ac.ebi.subs.util.MongoDBDependentTest'
     }
     testLogging {
+        events "passed", "skipped", "failed"
         exceptionFormat = 'full'
     }
+}
+
+configure(externalCiTest){
+    group = 'verification'
+    description = 'Run tests suitable for our external continuous integration environment.'
 }
 
 uploadArchives {
@@ -112,6 +121,7 @@ uploadArchives {
 
 springBoot {
     executable = true
+    buildInfo()
 }
 
 ssh.settings {

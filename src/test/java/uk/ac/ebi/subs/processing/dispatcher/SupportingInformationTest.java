@@ -12,7 +12,7 @@ import uk.ac.ebi.subs.CoreProcessingApp;
 import uk.ac.ebi.subs.data.component.*;
 import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
-import uk.ac.ebi.subs.processing.utils.MongoDBDependentTest;
+import uk.ac.ebi.subs.util.MongoDBDependentTest;
 import uk.ac.ebi.subs.repository.model.Assay;
 import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.model.SubmissionStatus;

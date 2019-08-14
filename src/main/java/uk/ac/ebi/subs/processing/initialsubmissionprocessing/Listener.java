@@ -1,4 +1,4 @@
-package uk.ac.ebi.subs.processing.archiveassignment;
+package uk.ac.ebi.subs.processing.initialsubmissionprocessing;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,14 +19,14 @@ public class Listener {
     private static final Logger logger = LoggerFactory.getLogger(Listener.class);
 
     private RabbitMessagingTemplate rabbitMessagingTemplate;
-    private SubmissionArchiveAssignmentService submissionArchiveAssignmentService;
+    private SubmissionProcessingService submissionProcessingService;
 
     @RabbitListener(queues = QueueConfig.SUBMISSION_ARCHIVE_ASSIGNMENT)
     public void assignArchives(SubmissionEnvelope submissionEnvelope) {
         final uk.ac.ebi.subs.data.Submission submission = submissionEnvelope.getSubmission();
-        logger.info("assign archives {}", submission);
-
-        submissionArchiveAssignmentService.assignArchives(submission.getId());
+        final String submissionId = submission.getId();
+        submissionProcessingService.setSubmissionStatusToProcessing(submissionId);
+        submissionProcessingService.assignArchives(submissionId);
 
         logger.info("archives assigned {}", submission);
 
@@ -37,8 +37,8 @@ public class Listener {
         );
     }
 
-    public Listener(RabbitMessagingTemplate rabbitMessagingTemplate, SubmissionArchiveAssignmentService submissionArchiveAssignmentService) {
+    public Listener(RabbitMessagingTemplate rabbitMessagingTemplate, SubmissionProcessingService submissionProcessingService) {
         this.rabbitMessagingTemplate = rabbitMessagingTemplate;
-        this.submissionArchiveAssignmentService = submissionArchiveAssignmentService;
+        this.submissionProcessingService = submissionProcessingService;
     }
 }
