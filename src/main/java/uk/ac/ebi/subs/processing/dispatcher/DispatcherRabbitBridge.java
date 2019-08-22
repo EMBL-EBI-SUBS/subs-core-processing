@@ -14,6 +14,8 @@ import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -131,8 +133,12 @@ public class DispatcherRabbitBridge {
 
             dispatcherService.insertUploadedFiles(submissionEnvelopeToTransmit);
 
+            logger.info("Submission {} to {} started", submissionId, targetTopic);
+            LocalDateTime submissionStart = LocalDateTime.now();
             rabbitMessagingTemplate.convertAndSend(Exchanges.SUBMISSIONS, targetTopic, submissionEnvelopeToTransmit);
+            LocalDateTime submissionEnd = LocalDateTime.now();
             logger.info("sent submission {} to {}", submissionId, targetTopic);
+            logger.info("Submission took {} to send", Duration.between(submissionEnd, submissionStart));
         }
     }
 }
