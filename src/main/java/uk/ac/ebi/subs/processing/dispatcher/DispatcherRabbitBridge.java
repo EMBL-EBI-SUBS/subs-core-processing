@@ -138,7 +138,10 @@ public class DispatcherRabbitBridge {
             rabbitMessagingTemplate.convertAndSend(Exchanges.SUBMISSIONS, targetTopic, submissionEnvelopeToTransmit);
             LocalDateTime submissionEnd = LocalDateTime.now();
             logger.info("sent submission {} to {}", submissionId, targetTopic);
-            logger.info("Submission took {} to send", Duration.between(submissionEnd, submissionStart));
+            Duration elapsedTime = Duration.between(submissionEnd, submissionStart);
+            logger.info("Submission took {} to send", String.format("%02d:%02d:%02d",
+                    elapsedTime.toHours(), elapsedTime.toMinutes(), elapsedTime.getSeconds())
+            );
         }
     }
 }
