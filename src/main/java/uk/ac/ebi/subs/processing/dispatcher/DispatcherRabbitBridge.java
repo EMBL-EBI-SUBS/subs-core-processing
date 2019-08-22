@@ -16,6 +16,7 @@ import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -138,10 +139,18 @@ public class DispatcherRabbitBridge {
             rabbitMessagingTemplate.convertAndSend(Exchanges.SUBMISSIONS, targetTopic, submissionEnvelopeToTransmit);
             LocalDateTime submissionEnd = LocalDateTime.now();
             logger.info("sent submission {} to {}", submissionId, targetTopic);
-            Duration elapsedTime = Duration.between(submissionEnd, submissionStart);
-            logger.info("Submission took {} to send", String.format("%02d:%02d:%02d",
-                    elapsedTime.toHours(), elapsedTime.toMinutes(), elapsedTime.getSeconds())
-            );
+            logElapsedTimeofSendingASubmission(submissionStart, submissionEnd);
         }
+    }
+
+    private void logElapsedTimeofSendingASubmission(LocalDateTime submissionStart, LocalDateTime submissionEnd) {
+        long elapsedTimeHours = ChronoUnit.HOURS.between(submissionEnd, submissionStart);
+        long elapsedTimeMinutes = ChronoUnit.MINUTES.between(submissionEnd, submissionStart);
+        long elapsedTimeSeconds = ChronoUnit.SECONDS.between(submissionEnd, submissionStart);
+        long elapsedTimeMilliSeconds = ChronoUnit.MILLIS.between(submissionEnd, submissionStart);
+        logger.info("Submission took {} to send",
+                String.format("%02d:%02d:%02d:%02d",
+                    elapsedTimeHours, elapsedTimeMinutes, elapsedTimeSeconds, elapsedTimeMilliSeconds)
+        );
     }
 }
