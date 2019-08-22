@@ -147,10 +147,10 @@ public class DispatcherRabbitBridge {
         long elapsedTimeHours = ChronoUnit.HOURS.between(submissionEnd, submissionStart);
         long elapsedTimeMinutes = ChronoUnit.MINUTES.between(submissionEnd, submissionStart);
         long elapsedTimeSeconds = ChronoUnit.SECONDS.between(submissionEnd, submissionStart);
-        long elapsedTimeNanos = ChronoUnit.NANOS.between(submissionEnd, submissionStart);
+        long elapsedTimeMillis = Math.abs(ChronoUnit.MILLIS.between(submissionEnd, submissionStart));
         logger.info("Submission took {} to send",
                 String.format("%02d:%02d:%02d:%02d",
-                    elapsedTimeHours, elapsedTimeMinutes, elapsedTimeSeconds, elapsedTimeNanos)
+                    elapsedTimeHours, elapsedTimeMinutes, elapsedTimeSeconds, elapsedTimeMillis)
         );
     }
 }
