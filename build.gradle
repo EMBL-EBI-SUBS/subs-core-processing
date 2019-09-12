@@ -10,7 +10,7 @@ buildscript {
 }
 
 group 'uk.ac.ebi.subs'
-version '2.12.0-SNAPSHOT'
+version '2.12.2-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'groovy'
@@ -30,7 +30,7 @@ repositories {
 dependencies {
     compile("uk.ac.ebi.subs:subs-processing-model:2.13.0-SNAPSHOT")
     compile("uk.ac.ebi.subs:subs-messaging:0.4.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-repository:2.30.0-SNAPSHOT")
+    compile("uk.ac.ebi.subs:subs-repository:2.30.1-SNAPSHOT")
 
     compileOnly("org.projectlombok:lombok:1.16.18")
     compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
