@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static uk.ac.ebi.subs.processing.utils.DataTypeBuilder.buildDataType;
 
@@ -127,7 +128,9 @@ public class ArchiveAssignmentTest {
     }
 
     private String extractArchive(StoredSubmittable storedSubmittable) {
-        ProcessingStatus processingStatus = processingStatusRepository.findOne(storedSubmittable.getProcessingStatus().getId());
+        ProcessingStatus processingStatus =
+                processingStatusRepository.findById(storedSubmittable.getProcessingStatus().getId()).orElse(null);
+        assertNotNull(processingStatus);
         return processingStatus.getArchive();
     }
 

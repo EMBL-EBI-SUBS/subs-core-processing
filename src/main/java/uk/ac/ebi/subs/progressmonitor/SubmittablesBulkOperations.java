@@ -1,6 +1,6 @@
 package uk.ac.ebi.subs.progressmonitor;
 
-import com.mongodb.BulkWriteResult;
+import com.mongodb.bulk.BulkWriteResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.BulkOperations;

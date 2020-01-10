@@ -31,7 +31,7 @@ public class ProgressMonitorService {
 
     /**
      * store supporting information received from archives
-     * @param submissionEnvelope
+     * @param submissionEnvelope the container contains the supporting samples information
      */
     public void storeSupportingInformation(SubmissionEnvelope submissionEnvelope) {
 
@@ -48,12 +48,12 @@ public class ProgressMonitorService {
                 submissionEnvelope.getSubmission().getId(),
                 supportingSamples.size()
         );
-        supportingSampleRepository.save(supportingSamples);
+        supportingSampleRepository.saveAll(supportingSamples);
     }
 
     /**
      * update accessions + statuses using information in a processingCertificateEnvelop
-     * @param processingCertificateEnvelope
+     * @param processingCertificateEnvelope container contains the processing related information of a given submission
      */
     public void updateSubmittablesFromCertificates(ProcessingCertificateEnvelope processingCertificateEnvelope) {
 

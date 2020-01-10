@@ -8,6 +8,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.test.context.junit4.SpringRunner;
 import uk.ac.ebi.subs.TestCoreProcessingApp;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
@@ -60,14 +61,14 @@ public class ApiSupportServiceDeleteTest {
 
     @Test
     public void deleteSubmissionContentsAndNotSubmission(){
-        assertThat(submissionRepository.findOne(submissionId), notNullValue());
+        assertThat(submissionRepository.findById(submissionId).orElse(null), notNullValue());
 
         apiSupportService.deleteSubmissionContents(submission);
 
         assertThat(sampleRepository.findBySubmissionId(submissionId), hasSize(0));
         assertThat(processingStatusRepository.findBySubmissionId(submissionId), hasSize(0));
-        assertThat(submissionStatusRepository.findAll(new PageRequest(0, 1)).getTotalElements(), is(equalTo(0L)));
-        assertThat(submissionRepository.findOne(submissionId), notNullValue());
+        assertThat(submissionStatusRepository.findAll(PageRequest.of(0, 1)).getTotalElements(), is(equalTo(0L)));
+        assertThat(submissionRepository.findById(submissionId).orElse(null), notNullValue());
     }
 
     @Test
@@ -75,17 +76,17 @@ public class ApiSupportServiceDeleteTest {
         submissionRepository.delete(submission);
 
         apiSupportService.deleteSubmissionContents(submission);
-        assertThat(submissionRepository.findOne(submissionId), nullValue());
+        assertThat(submissionRepository.findById(submissionId).orElse(null), nullValue());
 
         assertThat(sampleRepository.findBySubmissionId(submissionId),hasSize(0));
         assertThat(processingStatusRepository.findBySubmissionId(submissionId),hasSize(0));
-        assertThat(submissionStatusRepository.findAll(new PageRequest(0,1)).getTotalElements(), is(equalTo(0L)));
+        assertThat(submissionStatusRepository.findAll(PageRequest.of(0,1)).getTotalElements(), is(equalTo(0L)));
     }
 
     @After
     public void tearDown(){
         Stream.of(sampleRepository,submissionRepository,processingStatusRepository,submissionStatusRepository).forEach(
-                repo -> repo.deleteAll()
+                CrudRepository::deleteAll
         );
     }
 

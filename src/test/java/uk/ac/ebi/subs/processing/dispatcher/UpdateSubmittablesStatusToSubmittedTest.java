@@ -14,13 +14,13 @@ import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.data.component.Team;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
-import uk.ac.ebi.subs.util.MongoDBDependentTest;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
 import uk.ac.ebi.subs.repository.model.Study;
 import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.StudyRepository;
+import uk.ac.ebi.subs.util.MongoDBDependentTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +61,8 @@ public class UpdateSubmittablesStatusToSubmittedTest {
         System.out.println(stopWatch.prettyPrint());
 
         for (Study study : studies) {
-            ProcessingStatus processingStatus = processingStatusRepository.findOne(study.getProcessingStatus().getId());
+            ProcessingStatus processingStatus = processingStatusRepository.findById(study.getProcessingStatus().getId())
+                    .orElse(null);
 
             ProcessingStatusEnum expectedStatus = ProcessingStatusEnum.Draft;
 

@@ -4,22 +4,34 @@ buildscript {
         maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.21.RELEASE")
-        classpath 'org.hidetake:gradle-ssh-plugin:1.1.3'
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.1.RELEASE")
     }
 }
 
+plugins {
+    id 'java-library'
+    id 'org.springframework.boot' version '2.2.1.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+    id 'org.hidetake.ssh' version "2.10.1"
+    id "com.sourcemuse.mongo" version "1.0.7"
+}
+
 group 'uk.ac.ebi.subs'
-version '2.12.2'
+version '2.13.0'
 
-apply plugin: 'java'
-apply plugin: 'groovy'
-apply plugin: 'org.springframework.boot'
-apply plugin: 'maven'
-apply plugin: 'application'
-apply plugin: 'org.hidetake.ssh'
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
 
-mainClassName = "uk.ac.ebi.subs.CoreProcessingApp"
+bootJar {
+    mainClassName = "uk.ac.ebi.subs.CoreProcessingApp"
+    launchScript()
+}
+
+springBoot {
+    buildInfo()
+}
 
 repositories {
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
@@ -28,36 +40,22 @@ repositories {
 }
 
 dependencies {
-    compile("uk.ac.ebi.subs:subs-processing-model:2.13.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-messaging:0.4.0-SNAPSHOT")
-    compile("uk.ac.ebi.subs:subs-repository:2.30.1-SNAPSHOT")
+    implementation "uk.ac.ebi.subs:subs-processing-model:2.14.0-SNAPSHOT"
+    implementation "uk.ac.ebi.subs:subs-messaging:0.5.0-SNAPSHOT"
+    implementation "uk.ac.ebi.subs:subs-repository:2.31.0-SNAPSHOT"
 
-    compileOnly("org.projectlombok:lombok:1.16.18")
-    compile ('org.atteo:evo-inflector:1.2.1') // better pluralisation
-    compile("org.springframework.boot:spring-boot-starter-hateoas")
-    compile("org.springframework.boot:spring-boot-starter-data-mongodb")
-    compile("org.springframework.boot:spring-boot-starter-web")
-    compile 'org.codehaus.groovy:groovy-all:2.4.10'
-    compile 'org.springframework.security:spring-security-core'
-    compile 'com.auth0:java-jwt:3.2.0'
-    compile ("org.springframework.hateoas:spring-hateoas:0.23.0.RELEASE") // for traverson
-    compile ("com.mashape.unirest:unirest-java:1.4.9")
-    compile("de.siegmar:logback-gelf:1.1.0")
+    implementation  "org.atteo:evo-inflector:1.2.1" // better pluralisatio
+    implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
 
-    compile 'de.codecentric:spring-boot-admin-starter-client:1.5.7'
+    implementation "de.siegmar:logback-gelf:1.1.0"
 
-    testCompile("junit:junit")
-    testCompile("org.springframework.boot:spring-boot-starter-test")
-}
+    implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
 
-task sourceJar(type: Jar) { from sourceSets.main.allJava }
+    compileOnly "org.projectlombok:lombok:1.18.10"
+    annotationProcessor "org.projectlombok:lombok:1.18.10"
 
-artifacts {
-    archives jar
-    archives sourceJar {
-        classifier "sources"
-        destinationDir = new File("build/libs/sources")
-    }
+    testCompile "org.springframework.boot:spring-boot-starter-test"
 }
 
 task externalCiTest(type: Test) {
@@ -68,60 +66,11 @@ task externalCiTest(type: Test) {
         events "passed", "skipped", "failed"
         exceptionFormat = 'full'
     }
-}
 
-configure(externalCiTest){
-    group = 'verification'
-    description = 'Run tests suitable for our external continuous integration environment.'
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
-                if (project.hasProperty('ossrhUsername') && project.hasProperty('ossrhPassword')) {
-                    authentication(userName: ossrhUsername, password: ossrhPassword)
-                }
-            }
-
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-                if (project.hasProperty('ossrhUsername') && project.hasProperty('ossrhPassword')) {
-                    authentication(userName: ossrhUsername, password: ossrhPassword)
-                }
-
-            }
-
-            pom.project {
-                packaging 'jar'
-                url 'https://github.com/EMBL-EBI-SUBS/subs-dispatcher'
-
-                scm {
-                    url 'https://github.com/EMBL-EBI-SUBS/subs-dispatcher.git'
-                }
-
-                licenses {
-                    license {
-                        name 'The Apache License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id 'subs-internal'
-                        name 'EMBL-EBI-SUBS'
-                        email 'subs-internal@ebi.ac.uk'
-                    }
-                }
-            }
-        }
+    configure(externalCiTest) {
+        group = 'verification'
+        description = 'Run tests suitable for our external continuous integration environment.'
     }
-}
-
-springBoot {
-    executable = true
-    buildInfo()
 }
 
 ssh.settings {
@@ -170,7 +119,7 @@ remotes {
     }
 }
 
-task deployJar(type: SshTask, dependsOn: 'assemble') {
+task deployJar(dependsOn: 'assemble') {
     doLast {
         def uploadJarFileName = project.name + "-"  + project.version + "." + System.currentTimeMillis() + ".jar"
         File jarDeployDir = new File("/data/$gradle_env/$project.name/jar",uploadJarFileName)

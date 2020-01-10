@@ -4,7 +4,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
-import uk.ac.ebi.subs.repository.model.*;
+import uk.ac.ebi.subs.repository.model.Analysis;
+import uk.ac.ebi.subs.repository.model.Assay;
+import uk.ac.ebi.subs.repository.model.AssayData;
+import uk.ac.ebi.subs.repository.model.EgaDac;
+import uk.ac.ebi.subs.repository.model.EgaDacPolicy;
+import uk.ac.ebi.subs.repository.model.EgaDataset;
+import uk.ac.ebi.subs.repository.model.Project;
+import uk.ac.ebi.subs.repository.model.Protocol;
+import uk.ac.ebi.subs.repository.model.Sample;
+import uk.ac.ebi.subs.repository.model.SampleGroup;
+import uk.ac.ebi.subs.repository.model.StoredSubmittable;
+import uk.ac.ebi.subs.repository.model.Study;
 
 import java.util.Collection;
 
