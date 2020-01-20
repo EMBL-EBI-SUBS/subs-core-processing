@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.any;
+import static org.hamcrest.CoreMatchers.any;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;

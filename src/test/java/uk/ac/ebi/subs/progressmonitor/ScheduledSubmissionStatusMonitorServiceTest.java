@@ -27,7 +27,8 @@ import java.util.stream.Collectors;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static uk.ac.ebi.subs.processing.initialsubmissionprocessing.SubmissionStatusMessages.PROCESSING_IN_PROGRESS_MESSAGE;
 import static uk.ac.ebi.subs.processing.initialsubmissionprocessing.SubmissionStatusMessages.SUBMITTED_MESSAGE;
@@ -54,6 +55,7 @@ public class ScheduledSubmissionStatusMonitorServiceTest {
 
     @Before
     public void setup() {
+        cleanUpRepositories();
         SubmissionStatus submissionStatus1 = submissionStatusRepository.save(
                 Helpers.createSubmissionStatus(SUBMISSION_STATUS1_UUID, SubmissionStatusEnum.Processing));
         SubmissionStatus submissionStatus2 = submissionStatusRepository.save(
@@ -78,19 +80,23 @@ public class ScheduledSubmissionStatusMonitorServiceTest {
 
     @After
     public void tearDown() {
+        cleanUpRepositories();
+    }
+
+    private void cleanUpRepositories() {
         submissionStatusRepository.deleteAll();
         submissionRepository.deleteAll();
     }
 
     @Test
     public void getBackAllSubmission_thatSubmissionStatusNotInFinishedStatus() {
-        Pageable pageable = new PageRequest(0, 10);
+        Pageable pageable = PageRequest.of(0, 10);
         List<String> originalMessages = submissionStatusRepository.findAll(pageable).getContent().stream()
                 .map(SubmissionStatus::getMessage)
                 .collect(Collectors.toList());
         assertThat(originalMessages.size(), is(equalTo(3)));
         originalMessages.forEach(message ->
-                assertThat(message, isEmptyOrNullString())
+                assertThat(message, is(emptyOrNullString()))
         );
 
         scheduledSubmissionStatusMonitorService.setSubmissionStatusMessageIfOldAndNotInFinishedStatus();
@@ -101,10 +107,17 @@ public class ScheduledSubmissionStatusMonitorServiceTest {
                 .collect(Collectors.toList());
         assertThat(modifiedMessages.size(), is(equalTo(2)));
         modifiedMessages.forEach(message ->
-                assertThat(message, not(isEmptyOrNullString()))
+                assertThat(message, not(emptyOrNullString()))
         );
 
-        assertThat(submissionStatusRepository.findOne(SUBMISSION_STATUS1_UUID).getMessage(), is(equalTo(PROCESSING_IN_PROGRESS_MESSAGE)));
-        assertThat(submissionStatusRepository.findOne(SUBMISSION_STATUS2_UUID).getMessage(), is(equalTo(SUBMITTED_MESSAGE)));
+        final SubmissionStatus submissionStatus1 = submissionStatusRepository.findById(SUBMISSION_STATUS1_UUID)
+                .orElse(null);
+        assertNotNull(submissionStatus1);
+        assertThat(submissionStatus1.getMessage(), is(equalTo(PROCESSING_IN_PROGRESS_MESSAGE)));
+
+        final SubmissionStatus submissionStatus2 = submissionStatusRepository.findById(SUBMISSION_STATUS2_UUID)
+                .orElse(null);
+        assertNotNull(submissionStatus2);
+        assertThat(submissionStatus2.getMessage(), is(equalTo(SUBMITTED_MESSAGE)));
     }
 }

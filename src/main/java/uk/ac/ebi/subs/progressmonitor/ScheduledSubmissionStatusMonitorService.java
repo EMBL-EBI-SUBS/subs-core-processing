@@ -1,8 +1,8 @@
 package uk.ac.ebi.subs.progressmonitor;
 
-import com.mongodb.BasicDBObject;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.annotation.Id;
@@ -20,6 +20,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
+import uk.ac.ebi.subs.error.EntityNotFoundException;
 import uk.ac.ebi.subs.repository.model.SubmissionStatus;
 import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
@@ -57,8 +58,12 @@ public class ScheduledSubmissionStatusMonitorService {
                 this.mongoTemplate.aggregate(aggregation, "submission", NotFinishedSubmissionData.class);
 
         notFinishedSubmissionData.forEach(submissionData -> {
+            final String submissionStatus_id = submissionData.getSubmissionStatus_id();
             SubmissionStatus submissionStatus =
-                    submissionStatusRepository.findOne(submissionData.getSubmissionStatus_id());
+                submissionStatusRepository.findById(submissionStatus_id)
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            String.format("Submission status entity with ID: %s is not found in the database.", submissionStatus_id)));
+
             if (submissionStatus.getStatus().equals(SubmissionStatusEnum.Processing.name())) {
                 setStatusMessage(submissionStatus, PROCESSING_IN_PROGRESS_MESSAGE);
             } else if (submissionStatus.getStatus().equals(SubmissionStatusEnum.Submitted.name())) {
@@ -77,7 +82,7 @@ public class ScheduledSubmissionStatusMonitorService {
 
     private ProjectionOperation getInitialProjection() {
         AggregationExpression submissionStatusRelationProjection = aggregationOperationContext ->
-                new BasicDBObject("$objectToArray", "$$ROOT.submissionStatus");
+                new Document("$objectToArray", "$$ROOT.submissionStatus");
 
         return Aggregation.project("submissionDate")
                 .and(submissionStatusRelationProjection).as("submissionStatus");
@@ -122,11 +127,11 @@ public class ScheduledSubmissionStatusMonitorService {
     }
 
     private SortOperation sortBySubmissionDate() {
-        return Aggregation.sort(new Sort(Sort.Direction.DESC, "submissionDate"));
+        return Aggregation.sort(Sort.Direction.DESC, "submissionDate");
     }
 
     @Data
-    private class NotFinishedSubmissionData {
+    private static class NotFinishedSubmissionData {
 
         @Id
         private String _id;

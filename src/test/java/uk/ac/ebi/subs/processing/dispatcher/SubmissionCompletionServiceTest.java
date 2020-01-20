@@ -91,8 +91,8 @@ public class SubmissionCompletionServiceTest {
 
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
-        Mockito.when(mockSubmissionRepository.findOne(submission.getId()))
-                .thenReturn(submission);
+        Mockito.when(mockSubmissionRepository.findById(submission.getId()))
+                .thenReturn(java.util.Optional.ofNullable(submission));
 
         submissionCompletionService.markSubmissionWithFinishedStatus(submission.getId());
 
@@ -107,8 +107,8 @@ public class SubmissionCompletionServiceTest {
 
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
-        Mockito.when(mockSubmissionRepository.findOne(submission.getId()))
-                .thenReturn(submission);
+        Mockito.when(mockSubmissionRepository.findById(submission.getId()))
+                .thenReturn(java.util.Optional.ofNullable(submission));
 
         submissionCompletionService.markSubmissionWithFinishedStatus(submission.getId());
 
