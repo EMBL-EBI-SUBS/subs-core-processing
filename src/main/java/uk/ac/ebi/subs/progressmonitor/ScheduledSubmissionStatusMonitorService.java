@@ -1,8 +1,8 @@
 package uk.ac.ebi.subs.progressmonitor;
 
+import com.mongodb.BasicDBObject;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.annotation.Id;
@@ -27,6 +27,7 @@ import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 import java.sql.Date;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Optional;
 
 import static uk.ac.ebi.subs.processing.initialsubmissionprocessing.SubmissionStatusMessages.PROCESSING_IN_PROGRESS_MESSAGE;
 import static uk.ac.ebi.subs.processing.initialsubmissionprocessing.SubmissionStatusMessages.SUBMITTED_MESSAGE;
@@ -60,7 +61,7 @@ public class ScheduledSubmissionStatusMonitorService {
         notFinishedSubmissionData.forEach(submissionData -> {
             final String submissionStatus_id = submissionData.getSubmissionStatus_id();
             SubmissionStatus submissionStatus =
-                submissionStatusRepository.findById(submissionStatus_id)
+                    Optional.of(submissionStatusRepository.findOne(submissionStatus_id))
                     .orElseThrow(() -> new EntityNotFoundException(
                             String.format("Submission status entity with ID: %s is not found in the database.", submissionStatus_id)));
 
@@ -82,7 +83,7 @@ public class ScheduledSubmissionStatusMonitorService {
 
     private ProjectionOperation getInitialProjection() {
         AggregationExpression submissionStatusRelationProjection = aggregationOperationContext ->
-                new Document("$objectToArray", "$$ROOT.submissionStatus");
+                new BasicDBObject("$objectToArray", "$$ROOT.submissionStatus");
 
         return Aggregation.project("submissionDate")
                 .and(submissionStatusRelationProjection).as("submissionStatus");

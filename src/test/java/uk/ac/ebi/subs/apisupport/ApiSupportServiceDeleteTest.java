@@ -21,6 +21,7 @@ import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 import uk.ac.ebi.subs.util.MongoDBDependentTest;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -61,14 +62,14 @@ public class ApiSupportServiceDeleteTest {
 
     @Test
     public void deleteSubmissionContentsAndNotSubmission(){
-        assertThat(submissionRepository.findById(submissionId).orElse(null), notNullValue());
+        assertThat(Optional.of(submissionRepository.findOne(submissionId)).orElse(null), notNullValue());
 
         apiSupportService.deleteSubmissionContents(submission);
 
         assertThat(sampleRepository.findBySubmissionId(submissionId), hasSize(0));
         assertThat(processingStatusRepository.findBySubmissionId(submissionId), hasSize(0));
-        assertThat(submissionStatusRepository.findAll(PageRequest.of(0, 1)).getTotalElements(), is(equalTo(0L)));
-        assertThat(submissionRepository.findById(submissionId).orElse(null), notNullValue());
+        assertThat(submissionStatusRepository.findAll(new PageRequest(0, 1)).getTotalElements(), is(equalTo(0L)));
+        assertThat(Optional.of(submissionRepository.findOne(submissionId)).orElse(null), notNullValue());
     }
 
     @Test
@@ -76,11 +77,11 @@ public class ApiSupportServiceDeleteTest {
         submissionRepository.delete(submission);
 
         apiSupportService.deleteSubmissionContents(submission);
-        assertThat(submissionRepository.findById(submissionId).orElse(null), nullValue());
+        assertThat(submissionRepository.findOne(submissionId), nullValue());
 
         assertThat(sampleRepository.findBySubmissionId(submissionId),hasSize(0));
         assertThat(processingStatusRepository.findBySubmissionId(submissionId),hasSize(0));
-        assertThat(submissionStatusRepository.findAll(PageRequest.of(0,1)).getTotalElements(), is(equalTo(0L)));
+        assertThat(submissionStatusRepository.findAll(new PageRequest(0,1)).getTotalElements(), is(equalTo(0L)));
     }
 
     @After

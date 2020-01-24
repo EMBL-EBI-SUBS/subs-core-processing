@@ -15,6 +15,7 @@ import uk.ac.ebi.subs.repository.repos.submittables.SubmittableRepository;
 import uk.ac.ebi.subs.validator.repository.ValidationResultRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This is a Spring @Service component for dealing with works after deleted a {@link Submission} entity
@@ -72,7 +73,7 @@ public class ApiSupportService {
     public void markContentsAsSubmitted(uk.ac.ebi.subs.data.Submission submission) {
 
         final String submissionId = submission.getId();
-        Submission currentSubmission = submissionRepository.findById(submissionId)
+        Submission currentSubmission = Optional.of(submissionRepository.findOne(submissionId))
             .orElseThrow(() -> new EntityNotFoundException(
                 String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 

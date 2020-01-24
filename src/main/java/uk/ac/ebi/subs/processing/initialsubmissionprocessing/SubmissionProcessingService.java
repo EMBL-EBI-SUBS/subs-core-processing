@@ -16,6 +16,8 @@ import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
+import java.util.Optional;
+
 import static uk.ac.ebi.subs.processing.initialsubmissionprocessing.SubmissionStatusMessages.PROCESSING_STARTED_MESSAGE;
 
 /**
@@ -48,7 +50,7 @@ public class SubmissionProcessingService {
     }
 
     public void setSubmissionStatusToProcessing(String submissionId) {
-        Submission submission = submissionRepository.findById(submissionId)
+        Submission submission = Optional.of(submissionRepository.findOne(submissionId))
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 

@@ -16,6 +16,7 @@ import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RunWith(SpringRunner.class)
 public class SubmissionCompletionServiceTest {
@@ -91,8 +92,8 @@ public class SubmissionCompletionServiceTest {
 
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
-        Mockito.when(mockSubmissionRepository.findById(submission.getId()))
-                .thenReturn(java.util.Optional.ofNullable(submission));
+        Mockito.when(mockSubmissionRepository.findOne(submission.getId()))
+                .thenReturn(submission);
 
         submissionCompletionService.markSubmissionWithFinishedStatus(submission.getId());
 
@@ -107,8 +108,8 @@ public class SubmissionCompletionServiceTest {
 
         Mockito.when(mockProcessingStatusRepository.summariseSubmissionStatus(submission.getId()))
                 .thenReturn(statusSummary);
-        Mockito.when(mockSubmissionRepository.findById(submission.getId()))
-                .thenReturn(java.util.Optional.ofNullable(submission));
+        Mockito.when(mockSubmissionRepository.findOne(submission.getId()))
+                .thenReturn(submission);
 
         submissionCompletionService.markSubmissionWithFinishedStatus(submission.getId());
 

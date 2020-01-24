@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,7 +56,7 @@ public class SubmissionCompletionService {
     }
 
     public void markSubmissionWithFinishedStatus(String submissionId){
-        Submission submission = submissionRepository.findById(submissionId)
+        Submission submission = Optional.of(submissionRepository.findOne(submissionId))
             .orElseThrow(() -> new EntityNotFoundException(
                 String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 

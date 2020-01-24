@@ -24,6 +24,7 @@ import uk.ac.ebi.subs.repository.repos.submittables.SubmittableRepository;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -71,7 +72,7 @@ public class SubmissionEnvelopeService {
     }
 
     public SubmissionEnvelope fetchOne(String submissionId) {
-        Submission minimalSub = submissionRepository.findById(submissionId)
+        Submission minimalSub = Optional.of(submissionRepository.findOne(submissionId))
             .orElseThrow(() -> new EntityNotFoundException(
                 String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 
@@ -101,7 +102,7 @@ public class SubmissionEnvelopeService {
     }
 
     public Stream<? extends StoredSubmittable> submissionContents(String submissionId) {
-        Submission minimalSub = submissionRepository.findById(submissionId)
+        Submission minimalSub = Optional.of(submissionRepository.findOne(submissionId))
             .orElseThrow(() -> new EntityNotFoundException(
                 String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 
