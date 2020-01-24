@@ -85,7 +85,7 @@ public class DispatcherServiceImpl implements DispatcherService {
                 SubmittableRepository submittableRepository = dataTypeRepositoryMap.get(type);
 
                 for (String submittableId : typeAndIds.getValue()) {
-                    final Optional<?> submittableById = Optional.of(submittableRepository.findOne(submittableId));
+                    final Optional<?> submittableById = Optional.ofNullable(submittableRepository.findOne(submittableId));
                     StoredSubmittable submittable = (StoredSubmittable) submittableById
                         .orElseThrow(() -> new EntityNotFoundException(
                             String.format("Submittable entity with ID: %s is not found in the database.", submittableId)));

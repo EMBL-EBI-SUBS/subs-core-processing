@@ -57,7 +57,7 @@ public class ProgressMonitorListener {
      */
     private void sendSubmissionUpdated(String submissionId, String jwtToken) {
         SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(
-                Optional.of(submissionRepository.findOne(submissionId))
+                Optional.ofNullable(submissionRepository.findOne(submissionId))
                 .orElseThrow(() -> new EntityNotFoundException(
                     String.format("Submission entity with ID: %s is not found in the database.", submissionId)))
         );

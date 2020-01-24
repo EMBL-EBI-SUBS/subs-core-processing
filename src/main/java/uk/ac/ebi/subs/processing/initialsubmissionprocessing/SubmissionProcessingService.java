@@ -50,7 +50,7 @@ public class SubmissionProcessingService {
     }
 
     public void setSubmissionStatusToProcessing(String submissionId) {
-        Submission submission = Optional.of(submissionRepository.findOne(submissionId))
+        Submission submission = Optional.ofNullable(submissionRepository.findOne(submissionId))
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 

@@ -130,7 +130,7 @@ public class ArchiveAssignmentTest {
 
     private String extractArchive(StoredSubmittable storedSubmittable) {
         ProcessingStatus processingStatus =
-                Optional.of(processingStatusRepository.findOne(storedSubmittable.getProcessingStatus().getId())).orElse(null);
+                processingStatusRepository.findOne(storedSubmittable.getProcessingStatus().getId());
         assertNotNull(processingStatus);
         return processingStatus.getArchive();
     }

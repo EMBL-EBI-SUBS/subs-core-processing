@@ -62,14 +62,14 @@ public class ApiSupportServiceDeleteTest {
 
     @Test
     public void deleteSubmissionContentsAndNotSubmission(){
-        assertThat(Optional.of(submissionRepository.findOne(submissionId)).orElse(null), notNullValue());
+        assertThat(submissionRepository.findOne(submissionId), notNullValue());
 
         apiSupportService.deleteSubmissionContents(submission);
 
         assertThat(sampleRepository.findBySubmissionId(submissionId), hasSize(0));
         assertThat(processingStatusRepository.findBySubmissionId(submissionId), hasSize(0));
         assertThat(submissionStatusRepository.findAll(new PageRequest(0, 1)).getTotalElements(), is(equalTo(0L)));
-        assertThat(Optional.of(submissionRepository.findOne(submissionId)).orElse(null), notNullValue());
+        assertThat(submissionRepository.findOne(submissionId), notNullValue());
     }
 
     @Test

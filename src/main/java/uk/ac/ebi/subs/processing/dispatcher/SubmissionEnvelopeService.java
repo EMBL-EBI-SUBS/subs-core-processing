@@ -72,7 +72,7 @@ public class SubmissionEnvelopeService {
     }
 
     public SubmissionEnvelope fetchOne(String submissionId) {
-        Submission minimalSub = Optional.of(submissionRepository.findOne(submissionId))
+        Submission minimalSub = Optional.ofNullable(submissionRepository.findOne(submissionId))
             .orElseThrow(() -> new EntityNotFoundException(
                 String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 
@@ -102,7 +102,7 @@ public class SubmissionEnvelopeService {
     }
 
     public Stream<? extends StoredSubmittable> submissionContents(String submissionId) {
-        Submission minimalSub = Optional.of(submissionRepository.findOne(submissionId))
+        Submission minimalSub = Optional.ofNullable(submissionRepository.findOne(submissionId))
             .orElseThrow(() -> new EntityNotFoundException(
                 String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 

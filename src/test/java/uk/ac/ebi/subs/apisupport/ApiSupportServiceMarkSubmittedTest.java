@@ -43,8 +43,7 @@ public class ApiSupportServiceMarkSubmittedTest {
         assertNotNull(expectSubmitted);
         assertThat(expectSubmitted.getStatus(),equalTo(ProcessingStatusEnum.Submitted.name()));
 
-        ProcessingStatus expectDispatched = Optional.of(processingStatusRepository.findOne(dispatchedSample.getProcessingStatus().getId()))
-                .orElse(null);
+        ProcessingStatus expectDispatched = processingStatusRepository.findOne(dispatchedSample.getProcessingStatus().getId());
 
         assertNotNull(expectDispatched);
         assertThat(expectDispatched.getStatus(),equalTo(ProcessingStatusEnum.Dispatched.name()));
@@ -57,8 +56,7 @@ public class ApiSupportServiceMarkSubmittedTest {
 
         apiSupportService.markContentsAsSubmitted(submission);
 
-        ProcessingStatus expectDraft = Optional.of(processingStatusRepository.findOne(draftSample.getProcessingStatus().getId()))
-                .orElse(null);
+        ProcessingStatus expectDraft = processingStatusRepository.findOne(draftSample.getProcessingStatus().getId());
 
         assertNotNull(expectDraft);
         assertThat(expectDraft.getStatus(),equalTo(ProcessingStatusEnum.Draft.name()));

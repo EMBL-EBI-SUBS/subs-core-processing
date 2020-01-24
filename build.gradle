@@ -12,13 +12,13 @@ plugins {
     id 'java-library'
     id 'org.springframework.boot' version '1.5.21.RELEASE'
     id 'io.spring.dependency-management' version '1.0.8.RELEASE'
-    id 'org.hidetake.ssh' version "2.10.1"
+    id 'org.hidetake.ssh' version "1.1.3"
     id "com.sourcemuse.mongo" version "1.0.7"
     id 'application'
 }
 
 group 'uk.ac.ebi.subs'
-version '2.14.0'
+version '2.14.1'
 mainClassName = "uk.ac.ebi.subs.CoreProcessingApp"
 
 java {
@@ -117,7 +117,7 @@ remotes {
     }
 }
 
-task deployJar(dependsOn: 'assemble') {
+task deployJar(type: SshTask, dependsOn: 'assemble') {
     doLast {
         def uploadJarFileName = project.name + "-"  + project.version + "." + System.currentTimeMillis() + ".jar"
         File jarDeployDir = new File("/data/$gradle_env/$project.name/jar",uploadJarFileName)
