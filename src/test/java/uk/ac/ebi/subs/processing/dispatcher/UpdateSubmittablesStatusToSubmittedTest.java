@@ -62,8 +62,7 @@ public class UpdateSubmittablesStatusToSubmittedTest {
         System.out.println(stopWatch.prettyPrint());
 
         for (Study study : studies) {
-            ProcessingStatus processingStatus = Optional.of(processingStatusRepository.findOne(study.getProcessingStatus().getId()))
-                    .orElse(null);
+            ProcessingStatus processingStatus = processingStatusRepository.findOne(study.getProcessingStatus().getId());
 
             ProcessingStatusEnum expectedStatus = ProcessingStatusEnum.Draft;
 

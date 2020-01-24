@@ -111,13 +111,11 @@ public class ScheduledSubmissionStatusMonitorServiceTest {
                 assertThat(message, not(isEmptyOrNullString()))
         );
 
-        final SubmissionStatus submissionStatus1 = Optional.of(submissionStatusRepository.findOne(SUBMISSION_STATUS1_UUID))
-                .orElse(null);
+        final SubmissionStatus submissionStatus1 = submissionStatusRepository.findOne(SUBMISSION_STATUS1_UUID);
         assertNotNull(submissionStatus1);
         assertThat(submissionStatus1.getMessage(), is(equalTo(PROCESSING_IN_PROGRESS_MESSAGE)));
 
-        final SubmissionStatus submissionStatus2 = Optional.of(submissionStatusRepository.findOne(SUBMISSION_STATUS2_UUID))
-                .orElse(null);
+        final SubmissionStatus submissionStatus2 = submissionStatusRepository.findOne(SUBMISSION_STATUS2_UUID);
         assertNotNull(submissionStatus2);
         assertThat(submissionStatus2.getMessage(), is(equalTo(SUBMITTED_MESSAGE)));
     }

@@ -61,7 +61,7 @@ public class ScheduledSubmissionStatusMonitorService {
         notFinishedSubmissionData.forEach(submissionData -> {
             final String submissionStatus_id = submissionData.getSubmissionStatus_id();
             SubmissionStatus submissionStatus =
-                    Optional.of(submissionStatusRepository.findOne(submissionStatus_id))
+                    Optional.ofNullable(submissionStatusRepository.findOne(submissionStatus_id))
                     .orElseThrow(() -> new EntityNotFoundException(
                             String.format("Submission status entity with ID: %s is not found in the database.", submissionStatus_id)));
 
