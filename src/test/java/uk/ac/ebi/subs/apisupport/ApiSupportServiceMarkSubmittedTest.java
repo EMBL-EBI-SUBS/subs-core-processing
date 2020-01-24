@@ -38,8 +38,7 @@ public class ApiSupportServiceMarkSubmittedTest {
     public void markDraftAsSubmitted(){
         apiSupportService.markContentsAsSubmitted(submission);
 
-        ProcessingStatus expectSubmitted = Optional.of(processingStatusRepository.findOne(draftSample.getProcessingStatus().getId()))
-                .orElse(null);
+        ProcessingStatus expectSubmitted = processingStatusRepository.findOne(draftSample.getProcessingStatus().getId());
 
         assertNotNull(expectSubmitted);
         assertThat(expectSubmitted.getStatus(),equalTo(ProcessingStatusEnum.Submitted.name()));
