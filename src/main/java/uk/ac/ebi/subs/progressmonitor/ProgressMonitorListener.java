@@ -14,6 +14,8 @@ import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 
+import java.util.Optional;
+
 /**
  * Monitor is responsible for receiving information from archive agents and updating the state of the submission in our
  * database. Once the state is updated, a notification has to be sent to Rabbit to prompt the next dispatch cycle
@@ -55,7 +57,7 @@ public class ProgressMonitorListener {
      */
     private void sendSubmissionUpdated(String submissionId, String jwtToken) {
         SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(
-            submissionRepository.findById(submissionId)
+                Optional.of(submissionRepository.findOne(submissionId))
                 .orElseThrow(() -> new EntityNotFoundException(
                     String.format("Submission entity with ID: %s is not found in the database.", submissionId)))
         );

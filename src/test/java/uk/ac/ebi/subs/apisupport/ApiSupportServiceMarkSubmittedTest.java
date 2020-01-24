@@ -22,6 +22,7 @@ import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 import uk.ac.ebi.subs.util.MongoDBDependentTest;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -37,13 +38,12 @@ public class ApiSupportServiceMarkSubmittedTest {
     public void markDraftAsSubmitted(){
         apiSupportService.markContentsAsSubmitted(submission);
 
-        ProcessingStatus expectSubmitted = processingStatusRepository.findById(draftSample.getProcessingStatus().getId())
-                .orElse(null);
+        ProcessingStatus expectSubmitted = processingStatusRepository.findOne(draftSample.getProcessingStatus().getId());
 
         assertNotNull(expectSubmitted);
         assertThat(expectSubmitted.getStatus(),equalTo(ProcessingStatusEnum.Submitted.name()));
 
-        ProcessingStatus expectDispatched = processingStatusRepository.findById(dispatchedSample.getProcessingStatus().getId())
+        ProcessingStatus expectDispatched = Optional.of(processingStatusRepository.findOne(dispatchedSample.getProcessingStatus().getId()))
                 .orElse(null);
 
         assertNotNull(expectDispatched);
@@ -57,7 +57,7 @@ public class ApiSupportServiceMarkSubmittedTest {
 
         apiSupportService.markContentsAsSubmitted(submission);
 
-        ProcessingStatus expectDraft = processingStatusRepository.findById(draftSample.getProcessingStatus().getId())
+        ProcessingStatus expectDraft = Optional.of(processingStatusRepository.findOne(draftSample.getProcessingStatus().getId()))
                 .orElse(null);
 
         assertNotNull(expectDraft);

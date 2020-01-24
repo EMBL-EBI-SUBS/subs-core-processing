@@ -4,32 +4,30 @@ buildscript {
         maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.1.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.21.RELEASE")
     }
 }
 
 plugins {
     id 'java-library'
-    id 'org.springframework.boot' version '2.2.1.RELEASE'
+    id 'org.springframework.boot' version '1.5.21.RELEASE'
     id 'io.spring.dependency-management' version '1.0.8.RELEASE'
     id 'org.hidetake.ssh' version "2.10.1"
     id "com.sourcemuse.mongo" version "1.0.7"
+    id 'application'
 }
 
 group 'uk.ac.ebi.subs'
-version '2.13.0'
+version '2.14.0'
+mainClassName = "uk.ac.ebi.subs.CoreProcessingApp"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
 }
 
-bootJar {
-    mainClassName = "uk.ac.ebi.subs.CoreProcessingApp"
-    launchScript()
-}
-
 springBoot {
+    executable = true
     buildInfo()
 }
 
@@ -40,9 +38,9 @@ repositories {
 }
 
 dependencies {
-    implementation "uk.ac.ebi.subs:subs-processing-model:2.14.0-SNAPSHOT"
-    implementation "uk.ac.ebi.subs:subs-messaging:0.5.0-SNAPSHOT"
-    implementation "uk.ac.ebi.subs:subs-repository:2.31.0-SNAPSHOT"
+    implementation "uk.ac.ebi.subs:subs-processing-model:2.15.0-SNAPSHOT"
+    implementation "uk.ac.ebi.subs:subs-messaging:0.6.0-SNAPSHOT"
+    implementation "uk.ac.ebi.subs:subs-repository:2.33.3-SNAPSHOT"
 
     implementation  "org.atteo:evo-inflector:1.2.1" // better pluralisatio
     implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
@@ -50,7 +48,7 @@ dependencies {
 
     implementation "de.siegmar:logback-gelf:1.1.0"
 
-    implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
+    implementation "de.codecentric:spring-boot-admin-starter-client:1.5.7"
 
     compileOnly "org.projectlombok:lombok:1.18.10"
     annotationProcessor "org.projectlombok:lombok:1.18.10"

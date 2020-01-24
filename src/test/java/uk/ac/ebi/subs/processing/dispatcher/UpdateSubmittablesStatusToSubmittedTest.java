@@ -24,6 +24,7 @@ import uk.ac.ebi.subs.util.MongoDBDependentTest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -61,7 +62,7 @@ public class UpdateSubmittablesStatusToSubmittedTest {
         System.out.println(stopWatch.prettyPrint());
 
         for (Study study : studies) {
-            ProcessingStatus processingStatus = processingStatusRepository.findById(study.getProcessingStatus().getId())
+            ProcessingStatus processingStatus = Optional.of(processingStatusRepository.findOne(study.getProcessingStatus().getId()))
                     .orElse(null);
 
             ProcessingStatusEnum expectedStatus = ProcessingStatusEnum.Draft;

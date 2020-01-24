@@ -48,7 +48,7 @@ public class ProgressMonitorService {
                 submissionEnvelope.getSubmission().getId(),
                 supportingSamples.size()
         );
-        supportingSampleRepository.saveAll(supportingSamples);
+        supportingSampleRepository.save(supportingSamples);
     }
 
     /**
