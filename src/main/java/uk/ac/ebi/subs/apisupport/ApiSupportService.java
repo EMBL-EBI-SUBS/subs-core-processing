@@ -73,7 +73,7 @@ public class ApiSupportService {
     public void markContentsAsSubmitted(uk.ac.ebi.subs.data.Submission submission) {
 
         final String submissionId = submission.getId();
-        Submission currentSubmission = Optional.of(submissionRepository.findOne(submissionId))
+        Submission currentSubmission = Optional.ofNullable(submissionRepository.findOne(submissionId))
             .orElseThrow(() -> new EntityNotFoundException(
                 String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 
