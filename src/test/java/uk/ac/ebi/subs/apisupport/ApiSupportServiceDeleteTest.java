@@ -8,6 +8,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.test.context.junit4.SpringRunner;
 import uk.ac.ebi.subs.TestCoreProcessingApp;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
@@ -20,6 +21,7 @@ import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 import uk.ac.ebi.subs.util.MongoDBDependentTest;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -85,7 +87,7 @@ public class ApiSupportServiceDeleteTest {
     @After
     public void tearDown(){
         Stream.of(sampleRepository,submissionRepository,processingStatusRepository,submissionStatusRepository).forEach(
-                repo -> repo.deleteAll()
+                CrudRepository::deleteAll
         );
     }
 

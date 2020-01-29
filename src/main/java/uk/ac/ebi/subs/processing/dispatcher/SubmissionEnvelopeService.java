@@ -1,12 +1,11 @@
 package uk.ac.ebi.subs.processing.dispatcher;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.Submission;
 import uk.ac.ebi.subs.data.submittable.Project;
+import uk.ac.ebi.subs.error.EntityNotFoundException;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.repository.model.StoredSubmittable;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
@@ -25,6 +24,7 @@ import uk.ac.ebi.subs.repository.repos.submittables.SubmittableRepository;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -33,8 +33,6 @@ import java.util.stream.Stream;
  */
 @Service
 public class SubmissionEnvelopeService {
-
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private SubmissionRepository submissionRepository;
     private AnalysisRepository analysisRepository;
@@ -74,7 +72,9 @@ public class SubmissionEnvelopeService {
     }
 
     public SubmissionEnvelope fetchOne(String submissionId) {
-        Submission minimalSub = submissionRepository.findOne(submissionId);
+        Submission minimalSub = Optional.ofNullable(submissionRepository.findOne(submissionId))
+            .orElseThrow(() -> new EntityNotFoundException(
+                String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 
         if (minimalSub == null) {
             throw new ResourceNotFoundException();
@@ -102,7 +102,9 @@ public class SubmissionEnvelopeService {
     }
 
     public Stream<? extends StoredSubmittable> submissionContents(String submissionId) {
-        Submission minimalSub = submissionRepository.findOne(submissionId);
+        Submission minimalSub = Optional.ofNullable(submissionRepository.findOne(submissionId))
+            .orElseThrow(() -> new EntityNotFoundException(
+                String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
 
         if (minimalSub == null) {
             throw new ResourceNotFoundException();

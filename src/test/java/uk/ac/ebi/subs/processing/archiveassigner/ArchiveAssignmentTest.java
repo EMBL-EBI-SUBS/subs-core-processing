@@ -35,9 +35,11 @@ import uk.ac.ebi.subs.repository.services.SubmissionHelperService;
 import uk.ac.ebi.subs.repository.services.SubmittableHelperService;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static uk.ac.ebi.subs.processing.utils.DataTypeBuilder.buildDataType;
 
@@ -127,7 +129,9 @@ public class ArchiveAssignmentTest {
     }
 
     private String extractArchive(StoredSubmittable storedSubmittable) {
-        ProcessingStatus processingStatus = processingStatusRepository.findOne(storedSubmittable.getProcessingStatus().getId());
+        ProcessingStatus processingStatus =
+                processingStatusRepository.findOne(storedSubmittable.getProcessingStatus().getId());
+        assertNotNull(processingStatus);
         return processingStatus.getArchive();
     }
 

@@ -7,6 +7,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.test.context.junit4.SpringRunner;
 import uk.ac.ebi.subs.CoreProcessingApp;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
@@ -21,9 +22,11 @@ import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 import uk.ac.ebi.subs.repository.repos.submittables.SampleRepository;
 import uk.ac.ebi.subs.util.MongoDBDependentTest;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringRunner.class)
@@ -37,10 +40,12 @@ public class ApiSupportServiceMarkSubmittedTest {
 
         ProcessingStatus expectSubmitted = processingStatusRepository.findOne(draftSample.getProcessingStatus().getId());
 
+        assertNotNull(expectSubmitted);
         assertThat(expectSubmitted.getStatus(),equalTo(ProcessingStatusEnum.Submitted.name()));
 
         ProcessingStatus expectDispatched = processingStatusRepository.findOne(dispatchedSample.getProcessingStatus().getId());
 
+        assertNotNull(expectDispatched);
         assertThat(expectDispatched.getStatus(),equalTo(ProcessingStatusEnum.Dispatched.name()));
     }
 
@@ -53,14 +58,9 @@ public class ApiSupportServiceMarkSubmittedTest {
 
         ProcessingStatus expectDraft = processingStatusRepository.findOne(draftSample.getProcessingStatus().getId());
 
+        assertNotNull(expectDraft);
         assertThat(expectDraft.getStatus(),equalTo(ProcessingStatusEnum.Draft.name()));
     }
-
-
-
-
-
-    private String submissionId = "thisIsAFakeId";
 
     @Autowired private ApiSupportService apiSupportService;
 
@@ -79,7 +79,7 @@ public class ApiSupportServiceMarkSubmittedTest {
     @After
     public void tearDown(){
         Stream.of(sampleRepository,submissionRepository,processingStatusRepository,submissionRepository,submissionStatusRepository).forEach(
-                repo -> repo.deleteAll()
+                CrudRepository::deleteAll
         );
     }
 
@@ -95,6 +95,7 @@ public class ApiSupportServiceMarkSubmittedTest {
 
     private void createSubmissionContents(){
         submission = new Submission();
+        String submissionId = "thisIsAFakeId";
         submission.setId(submissionId);
         submission.setSubmissionStatus(new SubmissionStatus());
         submission.getSubmissionStatus().setStatus(SubmissionStatusEnum.Submitted);

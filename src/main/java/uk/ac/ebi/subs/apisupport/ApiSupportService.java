@@ -1,12 +1,11 @@
 package uk.ac.ebi.subs.apisupport;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
+import uk.ac.ebi.subs.error.EntityNotFoundException;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
 import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
@@ -16,6 +15,7 @@ import uk.ac.ebi.subs.repository.repos.submittables.SubmittableRepository;
 import uk.ac.ebi.subs.validator.repository.ValidationResultRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This is a Spring @Service component for dealing with works after deleted a {@link Submission} entity
@@ -47,10 +47,9 @@ public class ApiSupportService {
     /**
      * After a submission has been deleted through the API, cleanup its lingering contents
      *
-     * @param submission
+     * @param submission the {@link Submission} entity that has been deleted
      */
     public void deleteSubmissionContents(Submission submission) {
-
         logger.info("deleting submission {}", submission);
 
         processingStatusRepository.deleteBySubmissionId(submission.getId());
@@ -59,7 +58,7 @@ public class ApiSupportService {
         submissionStatusRepository.delete(submission.getSubmissionStatus());
         logger.debug("deleted submission status for submission {}",submission);
 
-        submissionContentsRepositories.stream().forEach(repo -> repo.deleteBySubmissionId(submission.getId()));
+        submissionContentsRepositories.forEach(repo -> repo.deleteBySubmissionId(submission.getId()));
         logger.debug("deleted contents of submission {}",submission);
 
         validationResultRepository.deleteAllBySubmissionId(submission.getId());
@@ -69,12 +68,16 @@ public class ApiSupportService {
     /**
      * Once a submission has been submitted, change the processing status of its submittables from 'draft' to 'submitted'
      *
-     * @param submission
+     * @param submission the {@link Submission} entity that has been submitted
      */
     public void markContentsAsSubmitted(uk.ac.ebi.subs.data.Submission submission) {
 
-        Submission currentSubmissionState = submissionRepository.findOne(submission.getId());
-        if (SubmissionStatusEnum.Draft.name().equals(currentSubmissionState.getSubmissionStatus().getStatus())) {
+        final String submissionId = submission.getId();
+        Submission currentSubmission = Optional.ofNullable(submissionRepository.findOne(submissionId))
+            .orElseThrow(() -> new EntityNotFoundException(
+                String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
+
+        if (SubmissionStatusEnum.Draft.name().equals(currentSubmission.getSubmissionStatus().getStatus())) {
             logger.info("not safe to set submission contents to submitted, still in draft in db {}",submission);
             return; //status update did not succeed, return
         }
@@ -83,7 +86,7 @@ public class ApiSupportService {
 
         submissionContentsRepositories
                 .stream()
-                .flatMap(repo -> repo.streamBySubmissionId(submission.getId()))
+                .flatMap(repo -> repo.streamBySubmissionId(submissionId))
                 .filter(item -> ProcessingStatusEnum.Draft.name().equals(item.getProcessingStatus().getStatus()))
                 .map(item -> {
                     ProcessingStatus status = item.getProcessingStatus();
@@ -91,10 +94,8 @@ public class ApiSupportService {
                     status.setStatus(ProcessingStatusEnum.Submitted);
                     return status;
                 })
-                .forEach(processingStatus -> processingStatusRepository.save(processingStatus))
-        ;
+                .forEach(processingStatusRepository::save);
 
         logger.debug("set submission contents to submitted {}",submission);
-
     }
 }

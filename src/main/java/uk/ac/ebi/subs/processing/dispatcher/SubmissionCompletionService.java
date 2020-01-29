@@ -3,6 +3,7 @@ package uk.ac.ebi.subs.processing.dispatcher;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.status.ProcessingStatusEnum;
 import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
+import uk.ac.ebi.subs.error.EntityNotFoundException;
 import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.model.SubmissionStatus;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,7 +56,10 @@ public class SubmissionCompletionService {
     }
 
     public void markSubmissionWithFinishedStatus(String submissionId){
-        Submission submission = submissionRepository.findOne(submissionId);
+        Submission submission = Optional.ofNullable(submissionRepository.findOne(submissionId))
+            .orElseThrow(() -> new EntityNotFoundException(
+                String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
+
         SubmissionStatus submissionStatus = submission.getSubmissionStatus();
         if (allSubmittablesSucceed(submissionId)) {
             submissionStatus.setStatus(SubmissionStatusEnum.Completed);

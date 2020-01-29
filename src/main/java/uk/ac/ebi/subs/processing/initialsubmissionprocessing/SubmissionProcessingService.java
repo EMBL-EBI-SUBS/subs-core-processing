@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.subs.data.component.Archive;
 import uk.ac.ebi.subs.data.status.SubmissionStatusEnum;
+import uk.ac.ebi.subs.error.EntityNotFoundException;
 import uk.ac.ebi.subs.processing.dispatcher.SubmissionEnvelopeService;
 import uk.ac.ebi.subs.repository.model.DataType;
 import uk.ac.ebi.subs.repository.model.ProcessingStatus;
@@ -14,6 +15,8 @@ import uk.ac.ebi.subs.repository.model.SubmissionStatus;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
 import uk.ac.ebi.subs.repository.repos.status.ProcessingStatusRepository;
 import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
+
+import java.util.Optional;
 
 import static uk.ac.ebi.subs.processing.initialsubmissionprocessing.SubmissionStatusMessages.PROCESSING_STARTED_MESSAGE;
 
@@ -47,7 +50,10 @@ public class SubmissionProcessingService {
     }
 
     public void setSubmissionStatusToProcessing(String submissionId) {
-        Submission submission = submissionRepository.findOne(submissionId);
+        Submission submission = Optional.ofNullable(submissionRepository.findOne(submissionId))
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("Submission entity with ID: %s is not found in the database.", submissionId)));
+
         SubmissionStatus submissionStatus = submission.getSubmissionStatus();
         submissionStatus.setStatus(SubmissionStatusEnum.Processing);
         submissionStatus.setMessage(PROCESSING_STARTED_MESSAGE);

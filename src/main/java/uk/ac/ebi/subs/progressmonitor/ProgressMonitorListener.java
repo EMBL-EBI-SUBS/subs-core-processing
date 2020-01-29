@@ -5,12 +5,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.stereotype.Component;
+import uk.ac.ebi.subs.error.EntityNotFoundException;
 import uk.ac.ebi.subs.messaging.Exchanges;
 import uk.ac.ebi.subs.messaging.Queues;
 import uk.ac.ebi.subs.messaging.Topics;
 import uk.ac.ebi.subs.processing.ProcessingCertificateEnvelope;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
+import uk.ac.ebi.subs.repository.model.Submission;
 import uk.ac.ebi.subs.repository.repos.SubmissionRepository;
+
+import java.util.Optional;
 
 /**
  * Monitor is responsible for receiving information from archive agents and updating the state of the submission in our
@@ -49,10 +53,15 @@ public class ProgressMonitorListener {
      * <p>
      * Recreate the submission envelope from storage and send it as a message
      *
-     * @param submissionId
+     * @param submissionId the ID of the {@link Submission} to update
      */
     private void sendSubmissionUpdated(String submissionId, String jwtToken) {
-        SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(submissionRepository.findOne(submissionId));
+        SubmissionEnvelope submissionEnvelope = new SubmissionEnvelope(
+                Optional.ofNullable(submissionRepository.findOne(submissionId))
+                .orElseThrow(() -> new EntityNotFoundException(
+                    String.format("Submission entity with ID: %s is not found in the database.", submissionId)))
+        );
+
         submissionEnvelope.setJWTToken(jwtToken);
 
         rabbitMessagingTemplate.convertAndSend(

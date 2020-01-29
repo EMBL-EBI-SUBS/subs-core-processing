@@ -16,6 +16,7 @@ import uk.ac.ebi.subs.repository.repos.status.SubmissionStatusRepository;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RunWith(SpringRunner.class)
 public class SubmissionCompletionServiceTest {

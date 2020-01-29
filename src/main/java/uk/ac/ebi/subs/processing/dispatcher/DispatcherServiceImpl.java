@@ -16,6 +16,7 @@ import uk.ac.ebi.subs.data.submittable.Assay;
 import uk.ac.ebi.subs.data.submittable.AssayData;
 import uk.ac.ebi.subs.data.submittable.Sample;
 import uk.ac.ebi.subs.data.submittable.Submittable;
+import uk.ac.ebi.subs.error.EntityNotFoundException;
 import uk.ac.ebi.subs.processing.SubmissionEnvelope;
 import uk.ac.ebi.subs.processing.fileupload.UploadedFile;
 import uk.ac.ebi.subs.repository.RefLookupService;
@@ -84,7 +85,10 @@ public class DispatcherServiceImpl implements DispatcherService {
                 SubmittableRepository submittableRepository = dataTypeRepositoryMap.get(type);
 
                 for (String submittableId : typeAndIds.getValue()) {
-                    StoredSubmittable submittable = submittableRepository.findOne(submittableId);
+                    final Optional<?> submittableById = Optional.ofNullable(submittableRepository.findOne(submittableId));
+                    StoredSubmittable submittable = (StoredSubmittable) submittableById
+                        .orElseThrow(() -> new EntityNotFoundException(
+                            String.format("Submittable entity with ID: %s is not found in the database.", submittableId)));
                     Archive archive = Archive.valueOf(submittable.getProcessingStatus().getArchive());
 
                     List<StoredSubmittable> referencedSubmittables = submittable
