@@ -18,7 +18,7 @@ plugins {
 }
 
 group 'uk.ac.ebi.subs'
-version '2.14.1'
+version '2.14.1-SNAPSHOT'
 mainClassName = "uk.ac.ebi.subs.CoreProcessingApp"
 
 java {
