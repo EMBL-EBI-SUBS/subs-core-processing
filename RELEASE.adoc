@@ -1,0 +1,12 @@
+= [.ebi-color]#Release notes#
+:toc: auto
+
+This pages contains links to release notes for DSP's Core Submission Processing and Dispatcher application.
+
+[[section]]
+== v2.14.1 Release notes
+
+Platform upgrades:
+--------------
+1. DSP's Core Submission Processing and Dispatcher application now runs on Java 11 (Open JDK 11).
+--------------
