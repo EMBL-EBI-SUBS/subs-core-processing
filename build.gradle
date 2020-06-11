@@ -18,7 +18,7 @@ plugins {
 }
 
 group 'uk.ac.ebi.subs'
-version '2.14.1-SNAPSHOT'
+version '2.15.0-SNAPSHOT'
 mainClassName = "uk.ac.ebi.subs.CoreProcessingApp"
 
 java {
@@ -32,15 +32,15 @@ springBoot {
 }
 
 repositories {
+        mavenLocal()
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         mavenCentral()
-        mavenLocal()
 }
 
 dependencies {
-    compile "uk.ac.ebi.subs:subs-processing-model:2.15.0-SNAPSHOT"
+    compile "uk.ac.ebi.subs:subs-processing-model:2.16.0-SNAPSHOT"
     compile "uk.ac.ebi.subs:subs-messaging:0.6.0-SNAPSHOT"
-    compile "uk.ac.ebi.subs:subs-repository:2.33.3-SNAPSHOT"
+    compile "uk.ac.ebi.subs:subs-repository:2.37.0-SNAPSHOT"
 
     compile  "org.atteo:evo-inflector:1.2.1" // better pluralisatio
     compile "org.springframework.boot:spring-boot-starter-data-mongodb"
