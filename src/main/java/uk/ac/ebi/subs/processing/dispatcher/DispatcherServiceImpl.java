@@ -144,7 +144,7 @@ public class DispatcherServiceImpl implements DispatcherService {
         ss.refs()
             .filter(Objects::nonNull)
             .filter(r -> r.getAlias() != null || r.getAccession() != null)
-            .map(r -> lookupRefAndFillInAccession(refLookupCache, r) );
+            .forEach(r -> lookupRefAndFillInAccession(refLookupCache, r) );
 
         return ss;
     }
