@@ -136,10 +136,15 @@ public class DispatcherServiceImpl implements DispatcherService {
         }
 
         StoredSubmittable ss = refLookupCache.get(ref);
-
         if (ss != null && !ref.isAccessioned() && ss.isAccessioned()){
             ref.setAccession(ss.getAccession());
         }
+
+        //recursively lookup and fill in the accession for submittables referenced by this submittable
+        ss.refs()
+            .filter(Objects::nonNull)
+            .filter(r -> r.getAlias() != null || r.getAccession() != null)
+            .map(r -> lookupRefAndFillInAccession(refLookupCache, r) );
 
         return ss;
     }
